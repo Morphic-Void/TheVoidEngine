@@ -161,7 +161,6 @@ private:
     static_assert(!std::is_const_v<T>, "TPodVector<T> requires non-const T.");
 
 public:
-    using value_type = T;
 
     //  Default and deleted lifetime
     TPodVector() noexcept = default;
