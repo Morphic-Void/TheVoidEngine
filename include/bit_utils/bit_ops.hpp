@@ -62,13 +62,16 @@ constexpr std::uint32_t parity(const std::uint32_t u) noexcept;		//	0 or 1
 constexpr std::uint32_t count_set_bits(const std::uint32_t u) noexcept;
 
 constexpr bool is_pow2(const std::uint32_t u) noexcept;
+constexpr bool is_pow2_or_zero(const std::uint32_t u) noexcept;
 
 //  pow2 rounding functions
 //	note: the pow2 parameter must be a power of 2
 //  if the value is already a pow2 or pow2 multiple, it is returned as it was
 //	returns 1u for u == 0u, and 0u on overflow/wrap
 constexpr std::uint32_t round_up_to_pow2(const std::uint32_t u) noexcept;
+constexpr std::uint32_t round_up_to_pow2_or_zero(const std::uint32_t u) noexcept;
 constexpr std::uint32_t round_up_to_pow2_multiple(const std::uint32_t u, const std::uint32_t pow2) noexcept;
+constexpr std::uint32_t next_multiple_of_pow2(const std::uint32_t u, const std::uint32_t pow2) noexcept;
 
 //	memory alignment in powers of 2
 constexpr std::uint32_t reduce_alignment_to_pow2(const std::uint32_t u) noexcept;
@@ -117,13 +120,16 @@ constexpr std::uint64_t parity(const std::uint64_t u) noexcept; //	0 or 1
 constexpr std::uint64_t count_set_bits(const std::uint64_t u) noexcept;
 
 constexpr bool is_pow2(const std::uint64_t u) noexcept;
+constexpr bool is_pow2_or_zero(const std::uint64_t u) noexcept;
 
 //  pow2 rounding functions
 //	note: the pow2 parameter must be a power of 2
 //  if the value is already a pow2 or pow2 multiple, it is returned as it was
 //	returns 1u for u == 0u, and 0u on overflow/wrap
 constexpr std::uint64_t round_up_to_pow2(const std::uint64_t u) noexcept;
+constexpr std::uint64_t round_up_to_pow2_or_zero(const std::uint64_t u) noexcept;
 constexpr std::uint64_t round_up_to_pow2_multiple(const std::uint64_t u, const std::uint64_t pow2) noexcept;
+constexpr std::uint64_t next_multiple_of_pow2(const std::uint64_t u, const std::uint64_t pow2) noexcept;
 
 //	memory alignment in powers of 2
 constexpr std::uint64_t reduce_alignment_to_pow2(const std::uint64_t u) noexcept;
@@ -284,7 +290,12 @@ constexpr std::uint32_t count_set_bits(const std::uint32_t u) noexcept
 
 constexpr bool is_pow2(const std::uint32_t u) noexcept
 {
-	return (u != 0u) && ((u & (u - 1u)) == 0);
+	return (u != 0u) && ((u & (u - 1u)) == 0u);
+}
+
+constexpr bool is_pow2_or_zero(const std::uint32_t u) noexcept
+{
+	return (u & (u - 1u)) == 0u;
 }
 
 constexpr std::uint32_t round_up_to_pow2(const std::uint32_t u) noexcept
@@ -292,9 +303,19 @@ constexpr std::uint32_t round_up_to_pow2(const std::uint32_t u) noexcept
 	return (u != 0u) ? (smear(u - 1u) + 1u) : 1u;
 }
 
+constexpr std::uint32_t round_up_to_pow2_or_zero(const std::uint32_t u) noexcept
+{
+	return smear(u - 1u) + 1u;
+}
+
 constexpr std::uint32_t round_up_to_pow2_multiple(const std::uint32_t u, const std::uint32_t pow2) noexcept
 {
 	return (u + (pow2 - 1u)) & ~(pow2 - 1u);
+}
+
+constexpr std::uint32_t next_multiple_of_pow2(const std::uint32_t u, const std::uint32_t pow2) noexcept
+{
+	return (u + pow2) & ~(pow2 - 1u);
 }
 
 constexpr std::uint32_t reduce_alignment_to_pow2(const std::uint32_t u) noexcept
@@ -463,7 +484,12 @@ constexpr std::uint64_t count_set_bits(const std::uint64_t u) noexcept
 
 constexpr bool is_pow2(const std::uint64_t u) noexcept
 {
-	return (u != 0u) && ((u & (u - 1u)) == 0);
+	return (u != 0u) && ((u & (u - 1u)) == 0u);
+}
+
+constexpr bool is_pow2_or_zero(const std::uint64_t u) noexcept
+{
+	return (u & (u - 1u)) == 0u;
 }
 
 constexpr std::uint64_t round_up_to_pow2(const std::uint64_t u) noexcept
@@ -471,9 +497,19 @@ constexpr std::uint64_t round_up_to_pow2(const std::uint64_t u) noexcept
 	return (u != 0u) ? (smear(u - 1u) + 1u) : 1u;
 }
 
+constexpr std::uint64_t round_up_to_pow2_or_zero(const std::uint64_t u) noexcept
+{
+	return smear(u - 1u) + 1u;
+}
+
 constexpr std::uint64_t round_up_to_pow2_multiple(const std::uint64_t u, const std::uint64_t pow2) noexcept
 {
 	return (u + (pow2 - 1u)) & ~(pow2 - 1u);
+}
+
+constexpr std::uint64_t next_multiple_of_pow2(const std::uint64_t u, const std::uint64_t pow2) noexcept
+{
+	return (u + pow2) & ~(pow2 - 1u);
 }
 
 constexpr std::uint64_t reduce_alignment_to_pow2(const std::uint64_t u) noexcept

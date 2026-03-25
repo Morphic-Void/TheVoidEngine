@@ -3,17 +3,103 @@
 //  Author: Ritchie Brannan
 //  Date:   24 Mar 26
 //
+//  Stable segmented storage for typed data (noexcept allocation substrate)
+//
+//  Requirements:
+//  - Requires C++17 or later.
+//  - No exceptions.
+//  - T must be non-const.
+//  - Storage is uninitialised raw T[] memory.
+//  - Indices, capacities, and alignment values are in elements.
+//
+//  Overview:
+//  - TStableStorage<T> owns multiple fixed-size buffers of T.
+//  - Buffers are allocated on demand and never relocated.
+//  - Slot indices map to (buffer_index, in-buffer index) via bit arithmetic.
+//  - Address stability is guaranteed once a slot is backed by storage.
+//
+//  Scope:
+//  - Models allocation topology and address mapping only.
+//  - Does not track occupancy or liveness.
+//  - Does not construct, destroy, or interpret T.
+//  - Higher-level lifecycle and ownership belong in wrapper layers.
+//
+//  Storage model:
+//  - Storage is segmented into equal-sized buffers (power-of-2 sized).
+//  - Buffer directory is an array of memory::TMemoryToken<T>.
+//  - Buffers are allocated lazily and never moved.
+//  - Growth occurs by allocating new buffers and expanding coverage.
+//  - m_slot_capacity represents the total covered slot range.
+//
+//  Addressing model:
+//  - slot_index is decomposed as:
+//        buffer_index  = slot_index >> m_buffer_shift
+//        buffer_slot   = slot_index & m_slot_mask
+//  - slots_per_buffer = m_slot_mask + 1 (power of 2).
+//  - buffer_index < buffer_count() implies allocated backing storage.
+//
+//  Status model:
+//  - is_valid() performs full invariant verification including directory state.
+//  - is_ready() checks structural coherence without scanning directory contents.
+//  - is_empty() reports fail-safe emptiness (not ready or no covered slots).
+//  - Accessors are fail-safe and return nullptr when not ready or invalid.
+//
+//  Constness model:
+//  - Constness of TStableStorage does not imply const access to managed storage.
+//  - Functions returning T* may be called on const instances.
+//  - Immutable access must be provided by higher-level const view abstractions.
+//
+//  Growth model:
+//  - map_index() ensures storage exists for a slot, allocating as needed.
+//  - index_ptr() performs no allocation and returns nullptr if not backed.
+//  - Buffer directory grows geometrically (power-of-2 capacity).
+//  - Slot coverage grows monotonically in buffer-sized increments.
+//
+//  State model:
+//  - Canonical empty:
+//        m_buffers.data() == nullptr
+//        m_buffer_capacity == 0
+//        m_buffer_shift == 0
+//        m_slot_mask == 0
+//        m_slot_capacity == 0
+//
+//  - Ready state:
+//        Directory allocated and geometry coherent.
+//        Slot coverage may be zero or non-zero.
+//
+//  - Covered range:
+//        [0, m_slot_capacity)
+//
+//  Metadata invariants (ready state):
+//  - m_buffer_capacity is power of 2 and > 0.
+//  - m_buffer_shift defines slots_per_buffer = 1 << m_buffer_shift.
+//  - m_slot_mask == slots_per_buffer - 1.
+//  - m_slot_capacity is a multiple of slots_per_buffer.
+//  - buffer_count() = m_slot_capacity / slots_per_buffer.
+//  - buffer_count() <= m_buffer_capacity.
+//
+//  Directory invariants (valid state):
+//  - Buffers [0, buffer_count()) are allocated (data() != nullptr).
+//  - Buffers [buffer_count(), m_buffer_capacity) are empty (data() == nullptr).
+//
+//  Notes:
+//  - On failure, mutating operations leave previously allocated storage intact.
+//  - No automatic compaction or shrinking is performed.
+//  - This type is intended as a low-level substrate for higher-level containers.
+//
 
 #pragma once
 
 #ifndef TSTABLE_STORAGE_HPP_INCLUDED
 #define TSTABLE_STORAGE_HPP_INCLUDED
 
+#include <algorithm>    //  std::max, std::min
 #include <cstddef>      //  std::size_t
 #include <type_traits>  //  std::is_const_v
 
 #include "memory/memory_allocation.hpp"
 #include "memory/memory_primitives.hpp"
+#include "bit_utils/bit_ops.hpp"
 #include "debug/debug.hpp"
 
 //==============================================================================
@@ -45,6 +131,10 @@ public:
     [[nodiscard]] bool is_ready() const noexcept;
 
     //  Accessors
+    //
+    //  - map_index(): allocating, grows storage to cover slot_index.
+    //  - index_ptr(): non-allocating, returns nullptr if not backed.
+    //  - Both are fail-safe and return nullptr when not ready.
     [[nodiscard]] T* map_index(const std::size_t slot_index) noexcept;
     [[nodiscard]] T* index_ptr(const std::size_t slot_index) const noexcept;
 
@@ -70,30 +160,72 @@ private:
     std::size_t m_slot_capacity = 0u;
 };
 
+//==============================================================================
+//  TStableStorage<T> out of class function bodies
+//==============================================================================
+
 template<typename T>
 inline bool TStableStorage<T>::is_valid() const noexcept
 {
-    //if (m_buffer_ptrs.data() == nullptr)
-    //{
-    //    return (m_buffer_ptr_capacity | m_buffer_shift | m_slot_mask | m_slot_capacity) == 0u;
-    //}
+    if (m_buffers.data() == nullptr)
+    {   //  check valid uninitialised state
+        return (m_buffer_capacity | m_buffer_shift | m_slot_mask | m_slot_capacity) == 0u;
+    }
 
-    //TBD
-    //m_buffer_ptr_capacity <- must be pow2 (0 is not pow2)
-    //m_slot_mask <- (1 << m_buffer_shift) -1
-    //m_slot_capacity <- must be multiple of (m_slot_mask + 1u), must be less than or equal to m_buffer_ptr_capacity * (m_slot_mask + 1u)
+    const std::size_t slots_per_buffer = buffer_slots();
+
+    if ((m_buffer_shift >= 5u) &&
+        (m_buffer_shift <= bit_ops::hi_bit_index(k_max_elements)) &&
+        ((m_slot_mask & slots_per_buffer) == 0u) &&
+        ((slots_per_buffer >> m_buffer_shift) == 1u) &&
+        bit_ops::is_pow2(m_buffer_capacity) &&
+        memory::in_non_zero_range(m_buffer_capacity, (k_max_elements / slots_per_buffer)) &&
+        ((m_slot_capacity & m_slot_mask) == 0u) &&
+        ((m_slot_capacity >> m_buffer_shift) <= m_buffer_capacity))
+    {   //  core invariants hold, now check the buffer pointers
+        const memory::TMemoryToken<T>* const buffers = m_buffers.data();
+        const std::size_t used_buffer_count = buffer_count();
+        std::size_t buffer_index = 0u;
+        while (buffer_index < used_buffer_count)
+        {
+            if (buffers[buffer_index].data() == nullptr)
+            {
+                return false;
+            }
+            ++buffer_index;
+        }
+        while (buffer_index < m_buffer_capacity)
+        {
+            if (buffers[buffer_index].data() != nullptr)
+            {
+                return false;
+            }
+            ++buffer_index;
+        }
+        return true;
+    }
+    return false;
 }
 
 template<typename T>
 inline bool TStableStorage<T>::is_empty() const noexcept
 {
-    //TBD
+    return !is_ready() || (m_slot_capacity == 0u);
 }
 
 template<typename T>
 inline bool TStableStorage<T>::is_ready() const noexcept
 {
-    //TBD
+    const std::size_t slots_per_buffer = buffer_slots();
+    return
+        (m_buffers.data() != nullptr) &&
+        bit_ops::is_pow2(m_buffer_capacity) &&
+        (m_buffer_shift >= 5u) &&
+        (m_buffer_shift <= bit_ops::hi_bit_index(k_max_elements)) &&
+        ((m_slot_mask & slots_per_buffer) == 0u) &&
+        ((slots_per_buffer >> m_buffer_shift) == 1u) &&
+        ((m_slot_capacity & m_slot_mask) == 0u) &&
+        ((m_slot_capacity >> m_buffer_shift) <= m_buffer_capacity);
 }
 
 template<typename T>
@@ -101,24 +233,38 @@ inline T* TStableStorage<T>::map_index(const std::size_t slot_index) noexcept
 {
     if (is_ready() && (slot_index < k_max_elements))
     {
+        const std::size_t slots_per_buffer = buffer_slots();
         while (slot_index >= m_slot_capacity)
         {   //  allocate additional buffers to fulfil the request
-            const std::size_t buffer_index = buffer_count()
-            if (buffer_index == m_buffer_capacity)
+            const std::size_t next_buffer_index = buffer_count();
+            if (next_buffer_index == m_buffer_capacity)
             {   //  need to grow the buffer directory
-                if (!m_buffers.reallocate(m_buffer_capacity, (m_buffer_capacity << 1)))
+                if (!m_buffers.reallocate(m_buffer_capacity, (m_buffer_capacity << 1u)))
                 {   //  reallocation failed
                     return nullptr;
                 }
-                m_buffer_capacity <<= 1;
+                m_buffer_capacity <<= 1u;
             }
-            if (!m_buffers.data()[buffer_index].allocate(buffer_slots()))
+            memory::TMemoryToken<T>* const buffers = m_buffers.data();
+            if (buffers == nullptr)
+            {
+                return nullptr;
+            }
+            if (!buffers[next_buffer_index].allocate(slots_per_buffer))
             {   //  allocation failed
                 return nullptr;
             }
-            m_slot_capacity += buffer_slots();
+            m_slot_capacity += slots_per_buffer;
         }
-        return &m_buffers.data()[buffer_index(slot_index)].data()[buffer_slot(slot_index)];
+        memory::TMemoryToken<T>* const buffers = m_buffers.data();
+        if (buffers != nullptr)
+        {
+            T* buffer = buffers[buffer_index(slot_index)].data();
+            if (buffer != nullptr)
+            {
+                return buffer + buffer_slot(slot_index);
+            }
+        }
     }
     return nullptr;
 }
@@ -126,9 +272,17 @@ inline T* TStableStorage<T>::map_index(const std::size_t slot_index) noexcept
 template<typename T>
 inline T* TStableStorage<T>::index_ptr(const std::size_t slot_index) const noexcept
 {
-    if (is_ready() && (index < m_slot_capacity))
+    if (is_ready() && (slot_index < m_slot_capacity))
     {
-        return &m_buffers.data()[buffer_index(slot_index)].data()[buffer_slot(slot_index)];
+        memory::TMemoryToken<T>* const buffers = m_buffers.data();
+        if (buffers != nullptr)
+        {
+            T* buffer = buffers[buffer_index(slot_index)].data();
+            if (buffer != nullptr)
+            {
+                return buffer + buffer_slot(slot_index);
+            }
+        }
     }
     return nullptr;
 }
@@ -136,16 +290,35 @@ inline T* TStableStorage<T>::index_ptr(const std::size_t slot_index) const noexc
 template<typename T>
 inline bool TStableStorage<T>::initialise(const std::size_t slots_per_buffer) noexcept
 {
-    //TBD
+    if (!is_valid() || (slots_per_buffer > k_max_elements))
+    {
+        return false;
+    }
+    const std::size_t pow2_slots_per_buffer = std::max(std::size_t{ 32 }, bit_ops::round_up_to_pow2(slots_per_buffer));
+    if (is_ready() && (buffer_slots() == pow2_slots_per_buffer))
+    {
+        return true;
+    }
+    deallocate();
+    const std::size_t buffer_capacity = std::min<std::size_t>(32u, (k_max_elements / pow2_slots_per_buffer));
+    if (m_buffers.allocate(buffer_capacity))
+    {
+        m_buffer_capacity = buffer_capacity;
+        m_buffer_shift = bit_ops::hi_bit_index(pow2_slots_per_buffer);
+        m_slot_mask = pow2_slots_per_buffer - 1u;
+        m_slot_capacity = 0u;
+        return true;
+    }
+    return false;
 }
 
 template<typename T>
 inline void TStableStorage<T>::deallocate() noexcept
 {
-    memory::TMemoryToken<T>* buffers = m_buffer.data();
+    memory::TMemoryToken<T>* buffers = m_buffers.data();
     if (buffers != nullptr)
     {
-        std::size_t count = get_buffer_count();
+        std::size_t count = m_buffer_capacity;
         while (count)
         {
             --count;
@@ -156,7 +329,7 @@ inline void TStableStorage<T>::deallocate() noexcept
         }
         m_buffers.deallocate();
     }
-    m_buffer_ptr_capacity = 0u;
+    m_buffer_capacity = 0u;
     m_buffer_shift = 0u;
     m_slot_mask = 0u;
     m_slot_capacity = 0u;

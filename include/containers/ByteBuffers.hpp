@@ -80,6 +80,7 @@
 //  - Detailed behavioural contracts are documented in ByteBuffers.md.
 //  - On failure, mutating operations leave state unchanged unless
 //    stated otherwise.
+//
 
 #pragma once
 
