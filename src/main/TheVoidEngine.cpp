@@ -1,4 +1,8 @@
-// Utils.cpp : This file contains the 'main' function. Program execution begins and ends there.
+
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
+//  TheVoidEngine.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
 #include <iostream>

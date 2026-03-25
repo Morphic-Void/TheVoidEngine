@@ -1,11 +1,8 @@
+
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
 // TUnorderedSlots_test_harness.cpp
-//
-// Clarifying questions (I proceeded with the assumptions noted):
-// 1) Should the harness test both TUnorderedSlots<int32_t> and TUnorderedSlots<int16_t>? (ASSUMED: yes.)
-// 2) Is it acceptable for pack() to pack payload in ascending *source slot index* order (because private_compact scans source_index upward)?
-//    (ASSUMED: yes, and the harness checks that.)
-// 3) Should resize/shrink_to_fit failures be treated as non-fatal in fuzz (e.g. due to minimum_safe_capacity/index_limit constraints)?
-//    (ASSUMED: yes; fuzz treats some failures as expected and still validates invariants.)
 //
 // Standalone configurable test harness for TUnorderedSlots<TIndex>.
 //

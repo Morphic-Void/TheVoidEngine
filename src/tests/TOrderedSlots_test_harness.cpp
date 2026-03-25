@@ -1,3 +1,7 @@
+
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
 // TOrderedSlots_test_harness_UPDATED_rank_index.cpp
 //
 // Update summary vs prior harness:
@@ -11,7 +15,6 @@
 // - This harness still uses STL freely (debug harness).
 // - It assumes empty rank_index is -1 (per updated template comments).
 // - For loose visits, rank_index is in [lexed_count .. lexed_count+loose_count).
-//
 
 #include <cstdint>
 #include <cstdlib>

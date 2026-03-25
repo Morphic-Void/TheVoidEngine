@@ -1,3 +1,7 @@
+
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
 //  File:   log.cpp
 //  Author: Ritchie Brannan
 //  Date:   1 Mar 26

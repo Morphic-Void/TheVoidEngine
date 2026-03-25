@@ -1,4 +1,7 @@
 
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
 //  File:   memory_primitives.hpp
 //  Author: Ritchie Brannan
 //  Date:   22 Feb 26
@@ -76,7 +79,6 @@
 //  - Explicit adoption functions provide the checked crossing points between
 //    byte and typed view forms.
 //  - Both forms share the same fail-safe and invariant semantics.
-//
 
 #pragma once
 

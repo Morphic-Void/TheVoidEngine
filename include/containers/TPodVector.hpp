@@ -1,4 +1,7 @@
 
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
 //  File:   TPodVector.hpp
 //  Author: Ritchie Brannan
 //  Date:   20 Mar 26
@@ -76,7 +79,6 @@
 //  - Element transfer uses byte-wise copy / move.
 //  - Padding bytes may be propagated.
 //  - Byte-level equality is not guaranteed for semantically equal values.
-//
 
 #pragma once
 

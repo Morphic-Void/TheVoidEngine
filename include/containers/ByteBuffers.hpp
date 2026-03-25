@@ -1,4 +1,7 @@
 
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
 //  File:   ByteBuffers.hpp
 //  Author: Ritchie Brannan
 //  Date:   22 Feb 26

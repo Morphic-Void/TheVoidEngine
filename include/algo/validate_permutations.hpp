@@ -1,4 +1,7 @@
 
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
 //  File:   validate_permutations.hpp
 //  Author: Ritchie Brannan
 //  Date:   10 Mar 26
@@ -11,7 +14,6 @@
 //
 //      O(N) alternatives may be preferable if side-effects and/or
 //      mutability and/or memory allocation are acceptable.
-//
 
 //==============================================================================
 //  Validate that an array contains every value in [base_value, base_value + count)

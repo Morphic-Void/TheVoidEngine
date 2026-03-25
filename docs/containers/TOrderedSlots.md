@@ -1,3 +1,7 @@
+
+Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+License: MIT (see LICENSE file in repository root)
+
 # TOrderedSlots<TIndex, TMeta>
 
 ## Purpose

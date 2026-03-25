@@ -1,4 +1,7 @@
 
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
 //  File:   TUnorderedSlots.hpp
 //  Author: Ritchie Brannan
 //  Date:   10 Jan 26

@@ -1,4 +1,7 @@
 
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
 //  File:   TStableStorage.hpp
 //  Author: Ritchie Brannan
 //  Date:   24 Mar 26
@@ -86,7 +89,6 @@
 //  - On failure, mutating operations leave previously allocated storage intact.
 //  - No automatic compaction or shrinking is performed.
 //  - This type is intended as a low-level substrate for higher-level containers.
-//
 
 #pragma once
 

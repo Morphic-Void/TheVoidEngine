@@ -1,10 +1,12 @@
 
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
 //  File:   debug.hpp
 //  Author: Ritchie Brannan
 //  Date:   17 Feb 26
 //
 //  Barebones debugging utilities
-//
 
 #pragma once
 

@@ -1,4 +1,7 @@
 
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+// 
 //  File:   memory_allocation.hpp
 //  Author: Ritchie Brannan
 //  Date:   17 Feb 26
@@ -29,7 +32,6 @@
 //
 //  Higher-level structures build semantic behavior on top of the
 //  primitives defined here.
-//
 
 #pragma once
 
