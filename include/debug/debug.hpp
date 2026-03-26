@@ -23,19 +23,19 @@
 //  Debug enabling definition
 //==============================================================================
 
-#ifndef VE_DEBUG_BUILD 
+#ifndef MV_DEBUG_BUILD 
     #if defined(_DEBUG) || !defined(NDEBUG)
-        #define VE_DEBUG_BUILD  1
+        #define MV_DEBUG_BUILD  1
     #else
-        #define VE_DEBUG_BUILD  0
+        #define MV_DEBUG_BUILD  0
     #endif
-#endif  //  #ifndef VE_DEBUG_BUILD
+#endif  //  #ifndef MV_DEBUG_BUILD
 
 //==============================================================================
 //  Debug trap
 //==============================================================================
 
-#if VE_DEBUG_BUILD 
+#if MV_DEBUG_BUILD 
 
 namespace debug_utils
 {
@@ -62,25 +62,25 @@ inline bool fail_safe(const bool ok) noexcept
 
 }   //  namespace debug_utils
 
-#endif  //  #endif VE_DEBUG_BUILD 
+#endif  //  #endif MV_DEBUG_BUILD 
 
 //==============================================================================
 //  Debug macros
 //==============================================================================
 
-#if VE_DEBUG_BUILD 
+#if MV_DEBUG_BUILD 
 
 //  Debugging assert macros
-#define VE_HARD_ASSERT(x) do { if (!(x)) debug_utils::hard_fail(); } while (0)
-#define VE_SELF_ASSERT(x) ((void)(x))
-#define VE_FAIL_SAFE_ASSERT(x) (debug_utils::fail_safe((x)))
+#define MV_HARD_ASSERT(x) do { if (!(x)) debug_utils::hard_fail(); } while (0)
+#define MV_SELF_ASSERT(x) ((void)(x))
+#define MV_FAIL_SAFE_ASSERT(x) (debug_utils::fail_safe((x)))
 
 #else
 
 //  Stubbed assert macros
-#define VE_HARD_ASSERT(x) do {} while (0)
-#define VE_SELF_ASSERT(x) ((void)0)
-#define VE_FAIL_SAFE_ASSERT(x) ((x))
+#define MV_HARD_ASSERT(x) do {} while (0)
+#define MV_SELF_ASSERT(x) ((void)0)
+#define MV_FAIL_SAFE_ASSERT(x) ((x))
 
 #endif
 

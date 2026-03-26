@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{31221455-eea4-49fc-b199-8afddebcfb8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{0a287026-d3d5-4240-9f41-d5b3d65af88c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="docs">
+      <UniqueIdentifier>{031836da-5c33-40f2-a92d-1cd60260be8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\containers">
+      <UniqueIdentifier>{621c4ddc-2685-4e96-b055-e90cdee67db0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\io">
+      <UniqueIdentifier>{e7144ddc-7e64-411e-8bd0-700dafe833f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\io\file">
+      <UniqueIdentifier>{cd3dcbef-d844-4cb2-80cb-ce341b31bba6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\io">
+      <UniqueIdentifier>{fde9a859-61d6-47b3-a46c-549158324836}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\io\file">
+      <UniqueIdentifier>{aa97284b-8652-46d0-82bd-5e4af3a8ad10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\io\file\internal">
+      <UniqueIdentifier>{eafcc249-7c8f-4344-b519-e3c765de7470}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\io\file\internal">
+      <UniqueIdentifier>{3f3507d4-df81-4755-beac-b6a631d6dda6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\bit_utils">
+      <UniqueIdentifier>{c6f38f64-0acf-4464-b13e-ca94463c8f32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\debug">
+      <UniqueIdentifier>{b452c2b8-25ed-4394-8f2e-066a3f0c8a4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\algo">
+      <UniqueIdentifier>{99886a11-10c4-4a0e-97b4-8f56150939b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="docs\containers">
+      <UniqueIdentifier>{0ec6a404-f567-4c50-b610-813350a0c919}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\memory">
+      <UniqueIdentifier>{1c51a074-04f8-450a-af06-683b6bd4967d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\main">
+      <UniqueIdentifier>{29a064fa-bd33-44d7-8051-d81c810ccba5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\tests">
+      <UniqueIdentifier>{02cc968e-0d20-48b1-b397-0f862c68a1d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\tests">
+      <UniqueIdentifier>{3d214a38-6cda-4650-a14a-8effe230b742}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\containers\ByteBuffers.hpp">
+      <Filter>include\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\containers\TOrderedSlots.hpp">
+      <Filter>include\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\containers\TUnorderedSlots.hpp">
+      <Filter>include\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\io\file\file.hpp">
+      <Filter>include\io\file</Filter>
+    </ClInclude>
+    <ClInclude Include="include\io\file\internal\native_path.hpp">
+      <Filter>include\io\file\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="include\io\file\internal\file_utils.hpp">
+      <Filter>include\io\file\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="include\io\file\log.hpp">
+      <Filter>include\io\file</Filter>
+    </ClInclude>
+    <ClInclude Include="include\containers\StringBuffers.hpp">
+      <Filter>include\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\bit_utils\bit_ops.hpp">
+      <Filter>include\bit_utils</Filter>
+    </ClInclude>
+    <ClInclude Include="include\bit_utils\bit_utils.hpp">
+      <Filter>include\bit_utils</Filter>
+    </ClInclude>
+    <ClInclude Include="include\bit_utils\spatial_codes.hpp">
+      <Filter>include\bit_utils</Filter>
+    </ClInclude>
+    <ClInclude Include="include\debug\debug.hpp">
+      <Filter>include\debug</Filter>
+    </ClInclude>
+    <ClInclude Include="include\algo\validate_permutations.hpp">
+      <Filter>include\algo</Filter>
+    </ClInclude>
+    <ClInclude Include="include\memory\memory_allocation.hpp">
+      <Filter>include\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="include\memory\memory_primitives.hpp">
+      <Filter>include\memory</Filter>
+    </ClInclude>
+    <ClInclude Include="include\containers\TPodVector.hpp">
+      <Filter>include\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tests\TOrderedSlots_test_harness.hpp">
+      <Filter>include\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tests\TUnorderedSlots_test_harness.hpp">
+      <Filter>include\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="include\containers\TStableStorage.hpp">
+      <Filter>include\containers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\io\file\file.cpp">
+      <Filter>src\io\file</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\file\internal\native_path.cpp">
+      <Filter>src\io\file\internal</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\file\internal\file_utils.cpp">
+      <Filter>src\io\file\internal</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\file\log.cpp">
+      <Filter>src\io\file</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main\ManifoldEngine.cpp">
+      <Filter>src\main</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests\TOrderedSlots_test_harness.cpp">
+      <Filter>src\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests\TUnorderedSlots_test_harness.cpp">
+      <Filter>src\tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="docs\containers\TOrderedSlots.md">
+      <Filter>docs\containers</Filter>
+    </None>
+    <None Include="docs\containers\TUnorderedSlots.md">
+      <Filter>docs\containers</Filter>
+    </None>
+    <None Include="docs\containers\ByteBuffers.md">
+      <Filter>docs\containers</Filter>
+    </None>
+    <None Include=".gitignore" />
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="LICENSE.txt" />
+  </ItemGroup>
+</Project>

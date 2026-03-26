@@ -2,8 +2,9 @@
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
 // 
-//  TheVoidEngine.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+//  ManifoldEngine.cpp
+// 
+//  This file contains the 'main' function. Program execution begins and ends there.
 
 #include <iostream>
 #include "algo/validate_permutations.hpp"
@@ -19,7 +20,6 @@
 #include "io/file/log.hpp"
 #include "tests/TOrderedSlots_test_harness.hpp"
 #include "tests/TUnorderedSlots_test_harness.hpp"
-
 
 int main()
 {

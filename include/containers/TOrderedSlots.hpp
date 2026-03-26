@@ -1409,14 +1409,14 @@ inline bool TOrderedSlots<TIndex, TMeta>::check_integrity() const noexcept
 template<typename TIndex, typename TMeta>
 inline bool TOrderedSlots<TIndex, TMeta>::is_safe(const bool allow_null) const noexcept
 {
-    return VE_FAIL_SAFE_ASSERT(m_lock == LockState::none) && (allow_null || (m_meta_slot_array != nullptr));
+    return MV_FAIL_SAFE_ASSERT(m_lock == LockState::none) && (allow_null || (m_meta_slot_array != nullptr));
 }
 
 template<typename TIndex, typename TMeta>
 inline bool TOrderedSlots<TIndex, TMeta>::lock(const LockState lock, const bool allow_null) const noexcept
 {
     bool success = false;
-    if (VE_FAIL_SAFE_ASSERT(m_lock == LockState::none) && (allow_null || (m_meta_slot_array != nullptr)))
+    if (MV_FAIL_SAFE_ASSERT(m_lock == LockState::none) && (allow_null || (m_meta_slot_array != nullptr)))
     {
         m_lock = lock;
         success = true;
@@ -1427,7 +1427,7 @@ inline bool TOrderedSlots<TIndex, TMeta>::lock(const LockState lock, const bool 
 template<typename TIndex, typename TMeta>
 inline void TOrderedSlots<TIndex, TMeta>::unlock(const LockState unlock) const noexcept
 {
-    if (VE_FAIL_SAFE_ASSERT(m_lock == unlock))
+    if (MV_FAIL_SAFE_ASSERT(m_lock == unlock))
     {
         m_lock = LockState::none;
     }
@@ -1653,7 +1653,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::avl_double_rotate(const std::i
 template<typename TIndex, typename TMeta>
 inline void TOrderedSlots<TIndex, TMeta>::avl_insert(const std::int32_t slot_index, const std::int32_t key_index) noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+    MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
     Slot& slot = m_meta_slot_array[slot_index];
     slot.parent_index = -1;
     slot.child_index[0] = -1;
@@ -1908,7 +1908,7 @@ inline void TOrderedSlots<TIndex, TMeta>::build_rank_index_table(std::int32_t* c
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::failed_validate_subtree() noexcept
 {
-    VE_HARD_ASSERT(false);
+    MV_HARD_ASSERT(false);
     return -1;
 }
 
@@ -1981,7 +1981,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::private_validate_subtree(const
 
     if (check_lex_order)
     {
-        VE_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+        MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
         std::int32_t prev_index = private_prev_lexed(slot_index);
         if (prev_index >= 0)
         {
@@ -2017,7 +2017,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::private_validate_subtree(const
 template<typename TIndex, typename TMeta>
 inline bool TOrderedSlots<TIndex, TMeta>::failed_integrity_check() noexcept
 {
-    VE_HARD_ASSERT(false);
+    MV_HARD_ASSERT(false);
     return false;
 }
 
@@ -2375,7 +2375,7 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_integrity_check() const noexce
 template<typename TIndex, typename TMeta>
 inline void TOrderedSlots<TIndex, TMeta>::private_on_visit_dispatcher(const bool visit_lexed, const bool visit_loose, const bool visit_empty) noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_visit);
+    MV_HARD_ASSERT(m_lock == LockState::on_visit);
     if (visit_lexed)
     {
         std::int32_t slot_index = m_lexed_tree_root;
@@ -2581,7 +2581,7 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_has_duplicate_key(const std::i
 template<typename TIndex, typename TMeta>
 inline bool TOrderedSlots<TIndex, TMeta>::private_has_duplicate_key_in_lexed(const std::int32_t slot_index) const noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+    MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
     bool has_duplicate = false;
     std::int32_t lexed_index = -1;
     std::int32_t check_index = m_lexed_tree_root;
@@ -2620,7 +2620,7 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_has_duplicate_key_in_lexed(con
 template<typename TIndex, typename TMeta>
 inline bool TOrderedSlots<TIndex, TMeta>::private_has_duplicate_key_in_loose(const std::int32_t slot_index) const noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+    MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
     bool has_duplicate = false;
     std::int32_t loose_index = m_loose_list_head;
     for (std::uint32_t loose_count = m_loose_count; loose_count != 0; --loose_count)
@@ -2642,7 +2642,7 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_has_duplicate_key_in_loose(con
 template<typename TIndex, typename TMeta>
 inline void TOrderedSlots<TIndex, TMeta>::private_sort_and_compact() noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_move_payload);
+    MV_HARD_ASSERT(m_lock == LockState::on_move_payload);
     const std::uint32_t occupied_count = m_lexed_count + m_loose_count;
     if (occupied_count)
     {
@@ -3175,7 +3175,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_by_rank_index(const std
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_any_equal(const std::int32_t key_index) const noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+    MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
     std::int32_t found_index = m_lexed_tree_root;
     while (found_index >= 0)
     {
@@ -3192,7 +3192,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_any_equal(const std::in
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_first_equal(const std::int32_t key_index) const noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+    MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
     std::int32_t found_index = -1;
     std::int32_t check_index = m_lexed_tree_root;
     while (check_index >= 0)
@@ -3210,7 +3210,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_first_equal(const std::
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_first_greater(const std::int32_t key_index) const noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+    MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
     std::int32_t found_index = -1;
     std::int32_t check_index = m_lexed_tree_root;
     while (check_index >= 0)
@@ -3228,7 +3228,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_first_greater(const std
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_first_greater_equal(const std::int32_t key_index) const noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+    MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
     std::int32_t found_index = -1;
     std::int32_t check_index = m_lexed_tree_root;
     while (check_index >= 0)
@@ -3246,7 +3246,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_first_greater_equal(con
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_last_equal(const std::int32_t key_index) const noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+    MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
     std::int32_t found_index = -1;
     std::int32_t check_index = m_lexed_tree_root;
     while (check_index >= 0)
@@ -3264,7 +3264,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_last_equal(const std::i
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_last_less(const std::int32_t key_index) const noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+    MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
     std::int32_t found_index = -1;
     std::int32_t check_index = m_lexed_tree_root;
     while (check_index >= 0)
@@ -3282,7 +3282,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_last_less(const std::in
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_last_less_equal(const std::int32_t key_index) const noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+    MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
     std::int32_t found_index = -1;
     std::int32_t check_index = m_lexed_tree_root;
     while (check_index >= 0)

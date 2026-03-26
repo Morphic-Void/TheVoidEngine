@@ -834,14 +834,14 @@ inline bool TUnorderedSlots<TIndex>::check_integrity() const noexcept
 template<typename TIndex>
 inline bool TUnorderedSlots<TIndex>::is_safe(const bool allow_null) const noexcept
 {
-    return VE_FAIL_SAFE_ASSERT(m_lock == LockState::none) && (allow_null || (m_meta_slot_array != nullptr));
+    return MV_FAIL_SAFE_ASSERT(m_lock == LockState::none) && (allow_null || (m_meta_slot_array != nullptr));
 }
 
 template<typename TIndex>
 inline bool TUnorderedSlots<TIndex>::lock(const LockState lock, const bool allow_null) const noexcept
 {
     bool success = false;
-    if (VE_FAIL_SAFE_ASSERT(m_lock == LockState::none) && (allow_null || (m_meta_slot_array != nullptr)))
+    if (MV_FAIL_SAFE_ASSERT(m_lock == LockState::none) && (allow_null || (m_meta_slot_array != nullptr)))
     {
         m_lock = lock;
         success = true;
@@ -852,7 +852,7 @@ inline bool TUnorderedSlots<TIndex>::lock(const LockState lock, const bool allow
 template<typename TIndex>
 inline void TUnorderedSlots<TIndex>::unlock(const LockState unlock) const noexcept
 {
-    if (VE_FAIL_SAFE_ASSERT(m_lock == unlock))
+    if (MV_FAIL_SAFE_ASSERT(m_lock == unlock))
     {
         m_lock = LockState::none;
     }
@@ -878,7 +878,7 @@ inline void TUnorderedSlots<TIndex>::safe_on_visit(const std::int32_t slot_index
             }
             default:
             {   //  corruption detected
-                VE_HARD_ASSERT(false);
+                MV_HARD_ASSERT(false);
                 identifier = -3;
                 break;
             }
@@ -952,7 +952,7 @@ inline void TUnorderedSlots<TIndex>::build_rank_index_table(std::int32_t* const 
 template<typename TIndex>
 inline bool TUnorderedSlots<TIndex>::failed_integrity_check() noexcept
 {
-    VE_HARD_ASSERT(false);
+    MV_HARD_ASSERT(false);
     return false;
 }
 
@@ -1096,7 +1096,7 @@ inline bool TUnorderedSlots<TIndex>::private_integrity_check() const noexcept
 template<typename TIndex>
 inline void TUnorderedSlots<TIndex>::private_on_visit_dispatcher(const bool visit_loose, const bool visit_empty) noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_visit);
+    MV_HARD_ASSERT(m_lock == LockState::on_visit);
     if (visit_loose)
     {
         std::int32_t slot_index = m_loose_list_head;
@@ -1228,7 +1228,7 @@ inline std::int32_t TUnorderedSlots<TIndex>::private_acquire(const std::int32_t 
 template<typename TIndex>
 inline void TUnorderedSlots<TIndex>::private_compact() noexcept
 {
-    VE_HARD_ASSERT(m_lock == LockState::on_move_payload);
+    MV_HARD_ASSERT(m_lock == LockState::on_move_payload);
     if (m_loose_count)
     {
         std::int32_t target_index = 0;

@@ -124,7 +124,7 @@ inline std::size_t base_growth_curve(const std::size_t required) noexcept
 //  Equivalent to rounding (required + pow2_stepping / 2) up to the next multiple of pow2_stepping.
 inline std::size_t base_stepped_growth(const std::size_t required, const std::size_t pow2_stepping) noexcept
 {   //  pow2_stepping must be a power of 2 and >= 2.
-    VE_HARD_ASSERT((pow2_stepping >= 2) && bit_ops::is_pow2(pow2_stepping));
+    MV_HARD_ASSERT((pow2_stepping >= 2) && bit_ops::is_pow2(pow2_stepping));
     return (required + pow2_stepping + (pow2_stepping >> 1) - 1u) & ~(pow2_stepping - 1u);
 }
 
@@ -136,7 +136,7 @@ inline std::size_t base_stepped_growth(const std::size_t required, const std::si
 //  This makes pow2_stepping the maximum step between successive recommended capacity classes.
 inline std::size_t capped_growth_rate_curve(const std::size_t required, const std::size_t pow2_stepping) noexcept
 {   //  pow2_stepping must be a power of 2 and >= 2.
-    VE_HARD_ASSERT((pow2_stepping >= 2) && bit_ops::is_pow2(pow2_stepping));
+    MV_HARD_ASSERT((pow2_stepping >= 2) && bit_ops::is_pow2(pow2_stepping));
     return std::min(base_growth_curve(required), base_stepped_growth(required, pow2_stepping));
 }
 

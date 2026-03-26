@@ -513,8 +513,8 @@ inline bool CMemoryToken::allocate(const std::size_t size, const std::size_t ali
             {
                 std::memset(m_data, 0, size);
             }
-            VE_HARD_ASSERT(bit_ops::is_pow2(m_align));
-            VE_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data) & (m_align - 1u)) == 0u);
+            MV_HARD_ASSERT(bit_ops::is_pow2(m_align));
+            MV_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data) & (m_align - 1u)) == 0u);
             return true;
         }
     }
@@ -557,8 +557,8 @@ inline bool CMemoryToken::reallocate(const std::size_t old_size, const std::size
             deallocate();
             m_data = data;
             m_align = norm_align;
-            VE_HARD_ASSERT(bit_ops::is_pow2(m_align));
-            VE_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data) & (m_align - 1u)) == 0u);
+            MV_HARD_ASSERT(bit_ops::is_pow2(m_align));
+            MV_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data) & (m_align - 1u)) == 0u);
             return true;
         }
     }
@@ -585,12 +585,12 @@ inline CMemoryView& CMemoryView::set(std::uint8_t* const data, const std::size_t
     {
         m_data = data;
         m_align = util::common_align(static_cast<std::size_t>(reinterpret_cast<std::uintptr_t>(data)), util::norm_align(align));
-        VE_HARD_ASSERT(bit_ops::is_pow2(m_align));
-        VE_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data) & (m_align - 1u)) == 0u);
+        MV_HARD_ASSERT(bit_ops::is_pow2(m_align));
+        MV_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data) & (m_align - 1u)) == 0u);
     }
     else
     {
-        VE_HARD_ASSERT(align == 0u);
+        MV_HARD_ASSERT(align == 0u);
         reset();
     }
     return *this;
@@ -615,9 +615,9 @@ inline CMemoryView CMemoryView::subview(const std::size_t offset) const noexcept
     if (is_ready())
     {
         const std::size_t subview_align = util::offset_align(m_align, offset);
-        VE_HARD_ASSERT(bit_ops::is_pow2(m_align));
-        VE_HARD_ASSERT(bit_ops::is_pow2(subview_align));
-        VE_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data + offset) & (subview_align - 1u)) == 0u);
+        MV_HARD_ASSERT(bit_ops::is_pow2(m_align));
+        MV_HARD_ASSERT(bit_ops::is_pow2(subview_align));
+        MV_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data + offset) & (subview_align - 1u)) == 0u);
         return CMemoryView{ (m_data + offset), subview_align };
     }
     return CMemoryView{};
@@ -638,12 +638,12 @@ inline CMemoryConstView& CMemoryConstView::set(const std::uint8_t* const data, c
     {
         m_data = data;
         m_align = util::common_align(static_cast<std::size_t>(reinterpret_cast<std::uintptr_t>(data)), util::norm_align(align));
-        VE_HARD_ASSERT(bit_ops::is_pow2(m_align));
-        VE_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data) & (m_align - 1u)) == 0u);
+        MV_HARD_ASSERT(bit_ops::is_pow2(m_align));
+        MV_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data) & (m_align - 1u)) == 0u);
     }
     else
     {
-        VE_HARD_ASSERT(align == 0u);
+        MV_HARD_ASSERT(align == 0u);
         reset();
     }
     return *this;
@@ -697,9 +697,9 @@ inline CMemoryConstView CMemoryConstView::subview(const std::size_t offset) cons
     if (is_ready())
     {
         const std::size_t subview_align = util::offset_align(m_align, offset);
-        VE_HARD_ASSERT(bit_ops::is_pow2(m_align));
-        VE_HARD_ASSERT(bit_ops::is_pow2(subview_align));
-        VE_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data + offset) & (subview_align - 1u)) == 0u);
+        MV_HARD_ASSERT(bit_ops::is_pow2(m_align));
+        MV_HARD_ASSERT(bit_ops::is_pow2(subview_align));
+        MV_HARD_ASSERT((reinterpret_cast<std::uintptr_t>(m_data + offset) & (subview_align - 1u)) == 0u);
         return CMemoryConstView{ (m_data + offset), subview_align };
     }
     return CMemoryConstView{};
