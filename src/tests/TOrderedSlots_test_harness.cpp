@@ -1,4 +1,3 @@
-
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
 // 
@@ -13,8 +12,12 @@
 //
 // Notes:
 // - This harness still uses STL freely (debug harness).
-// - It assumes empty rank_index is -1 (per updated template comments).
+// - Updated for full-domain rank-index contract:
+//     lexed  : [0 .. lexed_count)
+//     loose  : [lexed_count .. occupied_count)
+//     empty  : [occupied_count .. capacity)
 // - For loose visits, rank_index is in [lexed_count .. lexed_count+loose_count).
+// - For empty visits, rank_index is in [occupied_count .. capacity).
 
 #include <cstdint>
 #include <cstdlib>
@@ -32,7 +35,7 @@
 #include "tests/TOrderedSlots_test_harness.hpp"
 
 #ifndef TORDERED_TESTHARNESS_WITH_MAIN
-#define TORDERED_TESTHARNESS_WITH_MAIN  1
+#   define TORDERED_TESTHARNESS_WITH_MAIN  1
 #endif
 
 // -----------------------------
@@ -138,7 +141,6 @@ public:
         m_query_key = 0;
     }
 
-    // Acquire and insert a key as lexed or loose.
     bool insert_key_lexed(int key, bool require_unique = true) noexcept
     {
         m_query_key = key;
@@ -152,8 +154,6 @@ public:
 
     bool insert_key_loose(int key) noexcept
     {
-        // Loose acquisition does not use the query model for ordering,
-        // but we keep m_query_key consistent for possible later operations.
         m_query_key = key;
         const int32_t idx = Base::acquire(-1, /*lex=*/false, /*require_unique=*/false);
         if (idx < 0) return false;
@@ -170,9 +170,6 @@ public:
     void relex_all_slots() noexcept { Base::relex_all(); }
 
     void rebuild_loose_in_index_order() noexcept { Base::rebuild_loose_in_index_order(); }
-
-    // Updated: no preserve flag.
-    // If you need previous preserve_loose_index_order behavior, call rebuild_loose_in_index_order() first.
     void sort_and_compact_slots() noexcept { Base::sort_and_pack(); }
 
     bool remove_key_any_equal_lexed(int key) noexcept
@@ -203,10 +200,9 @@ public:
     {
         bool integrity = false;
         bool tree = false;
-        bool order = false;   // only meaningful if check_lex_order=true
+        bool order = false;
     };
 
-    // Validation helpers
     ValidateResult validate_detailed(bool check_lex_order) const noexcept
     {
         ValidateResult r;
@@ -219,7 +215,6 @@ public:
             return r;
         }
 
-        // Structural tree validation (without ordering)
         r.tree = Base::validate_tree(false);
 
         if (!r.tree)
@@ -228,15 +223,7 @@ public:
             return r;
         }
 
-        if (check_lex_order)
-        {
-            r.order = Base::validate_tree(true);
-        }
-        else
-        {
-            r.order = true;
-        }
-
+        r.order = check_lex_order ? Base::validate_tree(true) : true;
         return r;
     }
 
@@ -246,7 +233,6 @@ public:
         return r.integrity && r.tree && r.order;
     }
 
-    // Key snapshots
     std::vector<int> keys_in_lex_order() const noexcept
     {
         std::vector<int> out;
@@ -286,36 +272,30 @@ public:
 
         const int32_t head = Base::first_loose();
         if (head < 0)
-        {
-            // Circular list should have a head when count > 0.
             hard_fail_contract("slots_in_loose_index_order: loose_count>0 but first_loose() < 0");
-        }
 
         int32_t idx = head;
         for (uint32_t i = 0; i < n; ++i)
         {
             if (idx < 0)
-            {
                 hard_fail_contract("slots_in_loose_index_order: encountered -1 while traversing circular loose list");
-            }
 
             out.push_back(idx);
             idx = Base::next_loose(idx);
         }
 
-        // After exactly n steps, a correct circular list should return to head.
         if (idx != head)
-        {
             hard_fail_contract("slots_in_loose_index_order: did not return to head after loose_count() steps");
-        }
 
         return out;
     }
 
     // Empty traversal via visit_empty() (circular list safe).
     // Returns slot indices in the order produced by visit_empty().
-    // Enforces: exactly empty_count() callbacks, all rank_index == -1,
-    // and no duplicate slot indices within the empty visit.
+    // Enforces:
+    // - exactly empty_count() callbacks
+    // - rank_index spans [occupied_count .. capacity) in visitation order
+    // - no duplicate slot indices within the empty visit
     std::vector<int32_t> slots_in_empty_visit_order_checked() noexcept
     {
         std::vector<int32_t> out;
@@ -327,15 +307,16 @@ public:
 
         const auto& v = m_visits;
         if (v.size() != static_cast<size_t>(n))
-        {
             hard_fail_contract("visit_empty: callback count != empty_count()");
-        }
 
-        // Check rank_index tags and uniqueness.
+        const int32_t base = static_cast<int32_t>(Base::occupied_count());
+
         for (size_t i = 0; i < v.size(); ++i)
         {
-            if (v[i].rank != -1)
-                hard_fail_contract("visit_empty: rank_index is not -1");
+            const int32_t expect_rank = base + static_cast<int32_t>(i);
+
+            if (v[i].rank != expect_rank)
+                hard_fail_contract("visit_empty: rank_index mismatch");
 
             if (v[i].slot < 0)
                 hard_fail_contract("visit_empty: slot_index < 0");
@@ -352,7 +333,6 @@ public:
         return out;
     }
 
-    // Search wrappers (lexed-only, query-key model)
     int32_t find_any_equal(int key) const noexcept { m_query_key = key; return Base::find_any_equal(); }
     int32_t find_first_equal(int key) const noexcept { m_query_key = key; return Base::find_first_equal(); }
     int32_t find_last_equal(int key) const noexcept { m_query_key = key; return Base::find_last_equal(); }
@@ -362,10 +342,8 @@ public:
     int32_t rank_index_of(int32_t slot_index) const noexcept { return Base::rank_index_of(slot_index); }
     int32_t find_by_rank_index(int32_t rank_index) const noexcept { return Base::find_by_rank_index(rank_index); }
 
-    // Duplicate checks
     bool has_duplicate_key_any(int key) const noexcept { m_query_key = key; return Base::has_duplicate_key(-1); }
 
-    // Visit capture
     struct VisitRec { int32_t slot = -1; int32_t rank = -999; };
     void clear_visits() noexcept { m_visits.clear(); }
     const std::vector<VisitRec>& visits() const noexcept { return m_visits; }
@@ -376,8 +354,6 @@ public:
     void visit_occupied() noexcept { Base::visit_occupied(); }
     void visit_all() noexcept { Base::visit_all(); }
 
-    // Occupied traversal via visit_occupied() (safe regardless of circular loose list).
-    // Returns occupied slots in the order produced by visit_occupied(): lexed then loose.
     std::vector<int32_t> slots_in_occupied_visit_order() noexcept
     {
         std::vector<int32_t> out;
@@ -389,7 +365,6 @@ public:
     }
 
 private:
-    // Derived responsibilities
     int32_t on_compare_keys(const int32_t source, const int32_t target) const noexcept override
     {
         const int a = (source < 0) ? m_query_key : m_payload[static_cast<size_t>(source)];
@@ -401,7 +376,6 @@ private:
 
     void on_move_payload(const int32_t source, const int32_t target) noexcept override
     {
-        // Debug harness: enforce the contract strictly.
         if (source == target)
             hard_fail_contract("on_move_payload: source == target");
 
@@ -412,7 +386,6 @@ private:
 
         if (source < 0)
         {
-            // temp -> target
             ensure_payload_capacity_matches_slots();
             if (!m_temp_valid)
                 hard_fail_contract("on_move_payload: temp -> target but temp invalid");
@@ -423,14 +396,12 @@ private:
 
         if (target < 0)
         {
-            // source -> temp
             ensure_payload_capacity_matches_slots();
             m_temp = m_payload[static_cast<size_t>(source)];
             m_temp_valid = true;
             return;
         }
 
-        // source -> target
         ensure_payload_capacity_matches_slots();
         m_payload[static_cast<size_t>(target)] = m_payload[static_cast<size_t>(source)];
     }
@@ -457,11 +428,8 @@ private:
 private:
     mutable int m_query_key = 0;
     std::vector<int> m_payload;
-
-    // Temp for sort_and_pack moves
     int  m_temp = 0;
     bool m_temp_valid = false;
-
     std::vector<VisitRec> m_visits;
 };
 
@@ -727,9 +695,7 @@ static bool test_duplicates_and_stable_equals(const TOrderedConfig& cfg, TestLog
         return false;
     }
 
-    // Insert equal keys in a specific order; doc says stable-by-insertion among equals.
     const std::vector<int> ins = { 10, 5, 10, 10, 7, 10, 5 };
-    // We must allow duplicates: require_unique=false for lexed inserts.
     for (int k : ins)
     {
         if (!h.insert_key_lexed(k, /*require_unique=*/false))
@@ -751,7 +717,6 @@ static bool test_duplicates_and_stable_equals(const TOrderedConfig& cfg, TestLog
         return false;
     }
 
-    // Relex all should preserve in-order sequence (including equals runs).
     const auto before_slots = h.slots_in_lex_order();
     h.relex_all_slots();
     if (!h.validate_all(true))
@@ -766,7 +731,6 @@ static bool test_duplicates_and_stable_equals(const TOrderedConfig& cfg, TestLog
         return false;
     }
 
-    // sort_and_pack should also preserve in-order sequence for lexed items.
     h.sort_and_compact_slots();
     if (!h.validate_all(true))
     {
@@ -774,7 +738,6 @@ static bool test_duplicates_and_stable_equals(const TOrderedConfig& cfg, TestLog
         return false;
     }
     const auto after_compact_slots = h.slots_in_lex_order();
-    // After compaction, lexed slots must be [0..lexed_count)
     for (int32_t i = 0; i < static_cast<int32_t>(after_compact_slots.size()); ++i)
     {
         if (after_compact_slots[static_cast<size_t>(i)] != i)
@@ -801,7 +764,6 @@ static bool test_find_and_bounds(const TOrderedConfig& cfg, TestLogger& log)
         return false;
     }
 
-    // Lexed-only search: insert duplicates
     const std::vector<int> ins = { 2, 1, 2, 3, 2, 4, 2 };
     for (int k : ins)
     {
@@ -820,7 +782,6 @@ static bool test_find_and_bounds(const TOrderedConfig& cfg, TestLogger& log)
     const auto slots = h.slots_in_lex_order();
     const auto keys = h.keys_in_lex_order();
 
-    // Helper: compute expected bounds by scanning the in-order key list.
     auto first_pos = [&](int key) -> int32_t {
         for (size_t i = 0; i < keys.size(); ++i) if (keys[i] == key) return static_cast<int32_t>(i);
         return -1;
@@ -912,7 +873,6 @@ static bool test_rank_index_mapping(const TOrderedConfig& cfg, TestLogger& log)
         return false;
     }
 
-    // Mix lexed + loose
     for (int k : { 5, 1, 3, 2, 4 })
         if (!h.insert_key_lexed(k, true)) { log.fail("insert lexed failed"); return false; }
     for (int k : { 42, 41, 40 })
@@ -926,10 +886,8 @@ static bool test_rank_index_mapping(const TOrderedConfig& cfg, TestLogger& log)
 
     const auto lex_slots = h.slots_in_lex_order();
     const auto loose_slots = h.slots_in_loose_index_order();
+    const auto empty_slots = h.slots_in_empty_visit_order_checked();
 
-    // rank_index_of(slot) must match:
-    // - lexed: 0..lexed_count-1 in lex order
-    // - loose: lexed_count..lexed_count+loose_count-1 in loose traversal order
     for (size_t i = 0; i < lex_slots.size(); ++i)
     {
         const int32_t slot = lex_slots[i];
@@ -949,11 +907,11 @@ static bool test_rank_index_mapping(const TOrderedConfig& cfg, TestLogger& log)
         }
     }
 
-    const int32_t base = static_cast<int32_t>(h.lexed_count());
+    const int32_t lex_base = static_cast<int32_t>(h.lexed_count());
     for (size_t i = 0; i < loose_slots.size(); ++i)
     {
         const int32_t slot = loose_slots[i];
-        const int32_t expect = base + static_cast<int32_t>(i);
+        const int32_t expect = lex_base + static_cast<int32_t>(i);
         const int32_t ri = h.rank_index_of(slot);
         if (ri != expect)
         {
@@ -970,27 +928,32 @@ static bool test_rank_index_mapping(const TOrderedConfig& cfg, TestLogger& log)
         }
     }
 
-    // Out of range rank must return -1.
-    if (h.find_by_rank_index(-1) != -1) { log.fail("find_by_rank_index(-1) should be -1"); return false; }
-    const int32_t total_occ = static_cast<int32_t>(h.lexed_count() + h.loose_count());
-    if (h.find_by_rank_index(total_occ) != -1) { log.fail("find_by_rank_index(occ) should be -1"); return false; }
-
-    // Empty slots should report rank_index_of == -1.
-    // We don't assume which indices are empty; just validate via visit_empty.
-    h.clear_visits();
-    h.visit_empty();
-    for (const auto& r : h.visits())
+    const int32_t occ_base = static_cast<int32_t>(h.size());
+    for (size_t i = 0; i < empty_slots.size(); ++i)
     {
-        if (r.rank != -1)
+        const int32_t slot = empty_slots[i];
+        const int32_t expect = occ_base + static_cast<int32_t>(i);
+        const int32_t ri = h.rank_index_of(slot);
+        if (ri != expect)
         {
-            log.fail("visit_empty rank_index should be -1");
+            log.fail("rank_index_of(empty) mismatch slot=" + std::to_string(slot) +
+                " expected=" + std::to_string(expect) + " got=" + std::to_string(ri));
             return false;
         }
-        if (h.rank_index_of(r.slot) != -1)
+
+        const int32_t back = h.find_by_rank_index(expect);
+        if (back != slot)
         {
-            log.fail("rank_index_of(empty) should be -1 slot=" + std::to_string(r.slot));
+            log.fail("find_by_rank_index(empty) mismatch rank=" + std::to_string(expect));
             return false;
         }
+    }
+
+    if (h.find_by_rank_index(-1) != -1) { log.fail("find_by_rank_index(-1) should be -1"); return false; }
+    if (h.find_by_rank_index(static_cast<int32_t>(h.cap())) != -1)
+    {
+        log.fail("find_by_rank_index(capacity) should be -1");
+        return false;
     }
 
     return true;
@@ -1009,7 +972,6 @@ static bool test_visit_semantics(const TOrderedConfig& cfg, TestLogger& log)
         return false;
     }
 
-    // Insert 3 lexed, 2 loose
     for (int k : { 2, 1, 3 })
         if (!h.insert_key_lexed(k, true)) { log.fail("insert lexed failed"); return false; }
     for (int k : { 10, 11 })
@@ -1023,8 +985,8 @@ static bool test_visit_semantics(const TOrderedConfig& cfg, TestLogger& log)
 
     const auto lex_slots = h.slots_in_lex_order();
     const auto loose_slots = h.slots_in_loose_index_order();
+    const int32_t occ_base = static_cast<int32_t>(h.size());
 
-    // visit_lexed: rank_index 0..lexed_count-1, in lex order
     h.clear_visits();
     h.visit_lexed();
     const auto lex_vis = h.visits();
@@ -1042,7 +1004,6 @@ static bool test_visit_semantics(const TOrderedConfig& cfg, TestLogger& log)
         }
     }
 
-    // visit_loose: rank_index in [lexed_count .. lexed_count+loose_count), in loose traversal order
     h.clear_visits();
     h.visit_loose();
     const auto loose_vis = h.visits();
@@ -1062,17 +1023,19 @@ static bool test_visit_semantics(const TOrderedConfig& cfg, TestLogger& log)
         }
     }
 
-    // visit_empty: exactly empty_count() callbacks tagged -1.
-    (void)h.slots_in_empty_visit_order_checked();
+    const auto empty_slots = h.slots_in_empty_visit_order_checked();
+    if (empty_slots.size() != static_cast<size_t>(h.empty_count()))
+    {
+        log.fail("visit_empty count mismatch");
+        return false;
+    }
 
-    // Totals line up with capacity.
     if (h.lexed_count() + h.loose_count() + h.empty_count() != h.cap())
     {
         log.fail("count sum mismatch after visit checks");
         return false;
     }
 
-    // visit_all: lexed then loose then empty; empty rank_index == -1
     h.clear_visits();
     h.visit_all();
     const auto all = h.visits();
@@ -1085,8 +1048,8 @@ static bool test_visit_semantics(const TOrderedConfig& cfg, TestLogger& log)
 
     const size_t L = lex_slots.size();
     const size_t U = loose_slots.size();
+    const size_t E = empty_slots.size();
 
-    // Lexed prefix
     for (size_t i = 0; i < L; ++i)
     {
         if (all[i].slot != lex_slots[i] || all[i].rank != static_cast<int32_t>(i))
@@ -1096,7 +1059,6 @@ static bool test_visit_semantics(const TOrderedConfig& cfg, TestLogger& log)
         }
     }
 
-    // Loose segment
     for (size_t i = 0; i < U; ++i)
     {
         const size_t at = L + i;
@@ -1108,18 +1070,18 @@ static bool test_visit_semantics(const TOrderedConfig& cfg, TestLogger& log)
         }
     }
 
-    // Empty segment tag
-    for (size_t i = L + U; i < all.size(); ++i)
+    for (size_t i = 0; i < E; ++i)
     {
-        if (all[i].rank != -1)
+        const size_t at = L + U + i;
+        const int32_t expect_rank = occ_base + static_cast<int32_t>(i);
+        if (all[at].slot != empty_slots[i] || all[at].rank != expect_rank)
         {
-            log.fail("visit_all empty segment rank_index should be -1");
+            log.fail("visit_all empty segment mismatch");
             return false;
         }
     }
 
-    const size_t empty_segment = all.size() - (L + U);
-    if (empty_segment != static_cast<size_t>(h.empty_count()))
+    if (E != static_cast<size_t>(h.empty_count()))
     {
         log.fail("visit_all empty segment size mismatch");
         return false;
@@ -1134,10 +1096,6 @@ static bool test_sort_and_compact_postconditions(const TOrderedConfig& cfg, Test
     (void)cfg;
     using Harness = TOrderedSlots_Test<TIndex, TMeta>;
 
-    // Create a mix: lexed and loose, with some holes by erasing.
-    // Then pack in two modes:
-    //  - preserve_loose=false  (direct sort_and_pack)
-    //  - preserve_loose=true   (rebuild_loose_in_index_order(); sort_and_pack())
     for (int pass = 0; pass < 2; ++pass)
     {
         const bool preserve_loose = (pass == 1);
@@ -1152,7 +1110,6 @@ static bool test_sort_and_compact_postconditions(const TOrderedConfig& cfg, Test
 
         if (!hh.validate_all(true)) { log.fail("validate failed after setup"); return false; }
 
-        // Introduce holes
         const auto lex_slots0 = hh.slots_in_lex_order();
         if (lex_slots0.size() >= 2)
             if (!hh.erase_slot(lex_slots0[1])) { log.fail("erase failed"); return false; }
@@ -1173,7 +1130,6 @@ static bool test_sort_and_compact_postconditions(const TOrderedConfig& cfg, Test
 
         if (!hh.validate_all(true)) { log.fail("validate failed after sort_and_pack"); return false; }
 
-        // Lex keys stable
         const auto lex_keys_post = hh.keys_in_lex_order();
         if (lex_keys_post != lex_keys_pre)
         {
@@ -1182,7 +1138,6 @@ static bool test_sort_and_compact_postconditions(const TOrderedConfig& cfg, Test
             return false;
         }
 
-        // Postcondition: lexed slots are [0..lexed_count)
         const auto lex_slots_post = hh.slots_in_lex_order();
         for (int32_t i = 0; i < static_cast<int32_t>(lex_slots_post.size()); ++i)
         {
@@ -1194,7 +1149,6 @@ static bool test_sort_and_compact_postconditions(const TOrderedConfig& cfg, Test
             }
         }
 
-        // Postcondition: loose slots occupy [lexed_count..lexed_count+loose_count)
         const auto loose_slots_post = hh.slots_in_loose_index_order();
         const int32_t lexN = static_cast<int32_t>(lex_slots_post.size());
         for (size_t i = 0; i < loose_slots_post.size(); ++i)
@@ -1207,9 +1161,6 @@ static bool test_sort_and_compact_postconditions(const TOrderedConfig& cfg, Test
             }
         }
 
-        // Rank-index mapping must match visitation semantics after compaction:
-        // - lexed: rank == slot index
-        // - loose: rank == slot index (because they are contiguous immediately after lexed)
         for (int32_t s : lex_slots_post)
         {
             if (hh.rank_index_of(s) != s)
@@ -1227,28 +1178,23 @@ static bool test_sort_and_compact_postconditions(const TOrderedConfig& cfg, Test
             }
         }
 
-        // Optional: preserve_loose implies loose traversal is in original index order prior to compaction.
-        // We approximate by verifying that rebuilding loose in index order before compaction results
-        // in loose ranks (pre-compaction) being monotonic in slot index.
+        const auto empty_slots_post = hh.slots_in_empty_visit_order_checked();
+        const int32_t occN = static_cast<int32_t>(hh.size());
+        for (size_t i = 0; i < empty_slots_post.size(); ++i)
+        {
+            const int32_t s = empty_slots_post[i];
+            const int32_t expect_rank = occN + static_cast<int32_t>(i);
+            if (hh.rank_index_of(s) != expect_rank)
+            {
+                log.fail("post-pack rank_index_of(empty) mismatch: slot=" + std::to_string(s));
+                return false;
+            }
+        }
+
         if (preserve_loose)
         {
-            // We can only check this pre-compaction, because compaction relocates indices.
-            // loose_slots_pre is traversal order before rebuild+pack; rebuild changes it, so we re-check:
-            // Reconstruct again quickly: loose ranks should follow increasing slot indices after rebuild.
-            // (This check is weak but catches obvious regressions.)
-            //
-            // Note: we can't call unsafe ops during callbacks; we're not in callbacks here.
-            // So it's fine.
-            //
-            // We already called rebuild before pack; post-condition we can check is:
-            // the loose items *after* pack are still in traversal order matching their slot order
-            // because they are contiguous and circular list traversal should follow that order.
-            //
-            // So: expect loose_slots_post to be increasing by +1 modulo list start.
-            // We accept either increasing sequence starting anywhere because circular list head might be any element.
             if (loose_slots_post.size() >= 2)
             {
-                // Find a rotation that makes it strictly increasing.
                 bool ok = false;
                 for (size_t rot = 0; rot < loose_slots_post.size(); ++rot)
                 {
@@ -1288,7 +1234,7 @@ static bool test_fuzz_lightweight(const TOrderedConfig& cfg, TestLogger& log)
         const char* op = "";
         int key = 0;
         int32_t slot = -1;
-        bool flag = false; // e.g. require_unique / preserve_loose
+        bool flag = false;
     };
 
     std::vector<OpRec> hist;
@@ -1489,7 +1435,6 @@ static bool run_suite_typed(const TOrderedConfig& cfg, TestLogger& log)
     if (cfg.run_find_and_bounds)
         if (!test_find_and_bounds<TIndex, TMeta>(cfg, log)) return false;
 
-    // Renamed test:
     if (cfg.run_rank_index_mapping)
         if (!test_rank_index_mapping<TIndex, TMeta>(cfg, log)) return false;
 
@@ -1541,7 +1486,7 @@ static void apply_only_test(TOrderedConfig& cfg, const std::string& name)
     else if (name == "exhaustive_insert_delete") cfg.run_exhaustive_insert_delete = true;
     else if (name == "duplicates") cfg.run_duplicates_and_stability = true;
     else if (name == "find") cfg.run_find_and_bounds = true;
-    else if (name == "rankmap") cfg.run_rank_index_mapping = true; // retained flag name for CLI compatibility
+    else if (name == "rankmap") cfg.run_rank_index_mapping = true;
     else if (name == "visit") cfg.run_visit_semantics = true;
     else if (name == "pack") cfg.run_sort_and_compact = true;
 }

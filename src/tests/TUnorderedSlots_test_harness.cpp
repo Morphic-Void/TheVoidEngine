@@ -333,7 +333,7 @@ public:
 
         for (size_t i = 0; i < v.size(); ++i)
         {
-            if (v[i].id != -1) hard_fail_contract("empty_slots_via_visit_checked: identifier != -1");
+            if (v[i].id != -2) hard_fail_contract("empty_slots_via_visit_checked: identifier != -2");
             if (v[i].slot < 0) hard_fail_contract("empty_slots_via_visit_checked: slot_index < 0");
             for (size_t j = 0; j < i; ++j)
                 if (v[j].slot == v[i].slot) hard_fail_contract("empty_slots_via_visit_checked: duplicate slot_index observed");
@@ -613,7 +613,7 @@ static bool test_visit_semantics(const TUnorderedConfig& cfg, TestLogger& log)
         }
         for (size_t i = 0; i < v.size(); ++i)
         {
-            if (v[i].id != -2) { log.fail("visit_loose id != -2"); return false; }
+            if (v[i].id != -1) { log.fail("visit_loose id != -1"); return false; }
             for (size_t j = 0; j < i; ++j)
                 if (v[j].slot == v[i].slot) { log.fail("visit_loose duplicate slot"); return false; }
             if (!h.is_loose_slot(v[i].slot)) { log.fail("visit_loose visited non-loose slot"); return false; }
@@ -643,13 +643,13 @@ static bool test_visit_semantics(const TUnorderedConfig& cfg, TestLogger& log)
         // We don't assume specific slot ordering, only correct tagging and correct category membership.
         for (uint32_t i = 0; i < L; ++i)
         {
-            if (v[i].id != -2) { log.fail("visit_all: loose prefix id != -2"); return false; }
+            if (v[i].id != -1) { log.fail("visit_all: loose prefix id != -1"); return false; }
             if (!h.is_loose_slot(v[i].slot)) { log.fail("visit_all: loose prefix visited non-loose"); return false; }
         }
         for (uint32_t i = 0; i < E; ++i)
         {
             const uint32_t at = L + i;
-            if (v[at].id != -1) { log.fail("visit_all: empty suffix id != -1"); return false; }
+            if (v[at].id != -2) { log.fail("visit_all: empty suffix id != -2"); return false; }
             if (!h.is_empty_slot(v[at].slot)) { log.fail("visit_all: empty suffix visited non-empty"); return false; }
         }
 

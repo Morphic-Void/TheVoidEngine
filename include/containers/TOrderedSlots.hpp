@@ -3162,7 +3162,6 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_by_rank_index(const std
             if (search_count > (m_loose_count >> 1))
             {
                 side = 0u;
-                slot_index = meta[slot_index].child_index[side];
                 search_count = (m_loose_count - search_count);
             }
             while (search_count != 0)
@@ -3178,7 +3177,6 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::locate_by_rank_index(const std
             if (search_count > (m_empty_count >> 1))
             {
                 side = 0u;
-                slot_index = meta[slot_index].child_index[side];
                 search_count = (m_empty_count - search_count);
             }
             while (search_count != 0)
