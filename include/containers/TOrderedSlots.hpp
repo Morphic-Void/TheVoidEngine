@@ -1556,20 +1556,22 @@ inline bool TOrderedSlots<TIndex, TMeta>::safe_has_duplicate_key_in_loose(const 
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::avl_single_rotate(const std::int32_t slot_index, const std::int32_t heavy_side) noexcept
 {
+    Slot* const meta = m_meta_slot_array;
+
     const std::int32_t light_side = heavy_side ^ 1;
 
-    Slot& slot = m_meta_slot_array[slot_index];
+    Slot& slot = meta[slot_index];
     const std::int32_t parent_index = slot.parent_index;
 
     const std::int32_t child_index = slot.child_index[heavy_side];
-    Slot& child = m_meta_slot_array[child_index];
+    Slot& child = meta[child_index];
 
     const std::int32_t light_child_index = child.child_index[light_side];
 
     slot.child_index[heavy_side] = light_child_index;
     if (light_child_index >= 0)
     {
-        m_meta_slot_array[light_child_index].parent_index = slot_index;
+        meta[light_child_index].parent_index = slot_index;
     }
 
     child.child_index[light_side] = slot_index;
@@ -1578,7 +1580,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::avl_single_rotate(const std::i
     child.parent_index = parent_index;
     if (parent_index >= 0)
     {
-        Slot& parent = m_meta_slot_array[parent_index];
+        Slot& parent = meta[parent_index];
         const std::int32_t parent_side = (parent.child_index[1] == slot_index) ? 1 : 0;
         parent.child_index[parent_side] = child_index;
     }
@@ -1593,16 +1595,18 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::avl_single_rotate(const std::i
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::avl_double_rotate(const std::int32_t slot_index, const std::int32_t heavy_side) noexcept
 {
+    Slot* const meta = m_meta_slot_array;
+
     const std::int32_t light_side = heavy_side ^ 1;
 
-    Slot& slot = m_meta_slot_array[slot_index];
+    Slot& slot = meta[slot_index];
     const std::int32_t parent_index = slot.parent_index;
 
     const std::int32_t child_index = slot.child_index[heavy_side];
-    Slot& child = m_meta_slot_array[child_index];
+    Slot& child = meta[child_index];
 
     const std::int32_t grandchild_index = child.child_index[light_side];
-    Slot& grandchild = m_meta_slot_array[grandchild_index];
+    Slot& grandchild = meta[grandchild_index];
 
     const std::int32_t heavy_grandchild_index = grandchild.child_index[heavy_side];
     const std::int32_t light_grandchild_index = grandchild.child_index[light_side];
@@ -1611,14 +1615,14 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::avl_double_rotate(const std::i
     child.child_index[light_side] = heavy_grandchild_index;
     if (heavy_grandchild_index >= 0)
     {
-        m_meta_slot_array[heavy_grandchild_index].parent_index = child_index;
+        meta[heavy_grandchild_index].parent_index = child_index;
     }
 
     //  detach grandchild's light subtree and attach it as slot's heavy subtree.
     slot.child_index[heavy_side] = light_grandchild_index;
     if (light_grandchild_index >= 0)
     {
-        m_meta_slot_array[light_grandchild_index].parent_index = slot_index;
+        meta[light_grandchild_index].parent_index = slot_index;
     }
 
     //  promote grandchild above child and slot.
@@ -1632,7 +1636,7 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::avl_double_rotate(const std::i
     grandchild.parent_index = parent_index;
     if (parent_index >= 0)
     {
-        Slot& parent = m_meta_slot_array[parent_index];
+        Slot& parent = meta[parent_index];
         const std::int32_t parent_side = (parent.child_index[1] == slot_index) ? 1 : 0;
         parent.child_index[parent_side] = grandchild_index;
     }
@@ -1684,7 +1688,10 @@ template<typename TIndex, typename TMeta>
 inline void TOrderedSlots<TIndex, TMeta>::avl_insert(const std::int32_t slot_index, const std::int32_t key_index) noexcept
 {
     MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
-    Slot& slot = m_meta_slot_array[slot_index];
+
+    Slot* const meta = m_meta_slot_array;
+
+    Slot& slot = meta[slot_index];
     slot.parent_index = -1;
     slot.child_index[0] = -1;
     slot.child_index[1] = -1;
@@ -1700,24 +1707,24 @@ inline void TOrderedSlots<TIndex, TMeta>::avl_insert(const std::int32_t slot_ind
         std::int32_t walk_index = -1;
         std::int32_t walk_side = 0;
 
-        for (std::int32_t scan_index = m_lexed_tree_root; scan_index >= 0; scan_index = m_meta_slot_array[walk_index].child_index[walk_side])
+        for (std::int32_t scan_index = m_lexed_tree_root; scan_index >= 0; scan_index = meta[walk_index].child_index[walk_side])
         {
             walk_index = scan_index;
             walk_side = (on_compare_keys(key_index, walk_index) >= 0) ? 1 : 0;
         }
-        m_meta_slot_array[walk_index].child_index[walk_side] = slot_index;
+        meta[walk_index].child_index[walk_side] = slot_index;
         slot.parent_index = walk_index;
 
         //  walk_side: 0/1, delta: -1/+1
         std::int32_t delta = (walk_side << 1) - 1;
         while (walk_index >= 0)
         {
-            Slot& walk = m_meta_slot_array[walk_index];
+            Slot& walk = meta[walk_index];
             walk.balance_factor += delta;
             if (walk.balance_factor == delta)
             {   //  walk.balance_factor is 1 or -1
                 const std::int32_t walk_parent_index = walk.parent_index;
-                delta = ((walk_parent_index >= 0) && (m_meta_slot_array[walk_parent_index].child_index[1] == walk_index)) ? 1 : -1;
+                delta = ((walk_parent_index >= 0) && (meta[walk_parent_index].child_index[1] == walk_index)) ? 1 : -1;
                 walk_index = walk_parent_index;
             }
             else
@@ -1727,14 +1734,14 @@ inline void TOrderedSlots<TIndex, TMeta>::avl_insert(const std::int32_t slot_ind
                     const std::int32_t heavy_side = (walk.balance_factor > 0) ? 1 : 0;
                     const std::int32_t expected_child_balance_factor = (heavy_side << 1) - 1;
 
-                    Slot& child = m_meta_slot_array[walk.child_index[heavy_side]];
+                    Slot& child = meta[walk.child_index[heavy_side]];
                     const std::int32_t child_balance_factor = child.balance_factor;
 
                     if (child_balance_factor == expected_child_balance_factor)
                     {
                         walk_index = avl_single_rotate(walk_index, heavy_side);
                         walk.balance_factor = 0;
-                        m_meta_slot_array[walk_index].balance_factor = 0;
+                        meta[walk_index].balance_factor = 0;
                     }
                     else
                     {
@@ -1756,11 +1763,13 @@ inline void TOrderedSlots<TIndex, TMeta>::avl_insert(const std::int32_t slot_ind
 template<typename TIndex, typename TMeta>
 inline void TOrderedSlots<TIndex, TMeta>::avl_remove(const std::int32_t slot_index) noexcept
 {
-    Slot& slot = m_meta_slot_array[slot_index];
+    Slot* const meta = m_meta_slot_array;
+
+    Slot& slot = meta[slot_index];
 
     const std::int32_t parent_index = slot.parent_index;
     const std::int32_t parent_side =
-        ((parent_index >= 0) && (m_meta_slot_array[parent_index].child_index[1] == slot_index)) ? 1 : 0;
+        ((parent_index >= 0) && (meta[parent_index].child_index[1] == slot_index)) ? 1 : 0;
 
     std::int32_t walk_index = -1;
     std::int32_t walk_side = 0;
@@ -1768,26 +1777,26 @@ inline void TOrderedSlots<TIndex, TMeta>::avl_remove(const std::int32_t slot_ind
     if (slot.is_lexed_stem())
     {
         std::int32_t successor_index = slot.child_index[1];
-        while (m_meta_slot_array[successor_index].child_index[0] >= 0)
+        while (meta[successor_index].child_index[0] >= 0)
         {
-            successor_index = m_meta_slot_array[successor_index].child_index[0];
+            successor_index = meta[successor_index].child_index[0];
         }
 
-        Slot& successor = m_meta_slot_array[successor_index];
+        Slot& successor = meta[successor_index];
         const std::int32_t successor_parent_index = successor.parent_index;
         const std::int32_t successor_right_index = successor.child_index[1];
 
         if (successor_parent_index != slot_index)
         {
-            Slot& successor_parent = m_meta_slot_array[successor_parent_index];
+            Slot& successor_parent = meta[successor_parent_index];
             successor_parent.child_index[0] = successor_right_index;
             if (successor_right_index >= 0)
             {
-                m_meta_slot_array[successor_right_index].parent_index = successor_parent_index;
+                meta[successor_right_index].parent_index = successor_parent_index;
             }
 
             successor.child_index[1] = slot.child_index[1];
-            m_meta_slot_array[successor.child_index[1]].parent_index = successor_index;
+            meta[successor.child_index[1]].parent_index = successor_index;
 
             walk_index = successor_parent_index;
             walk_side = 0;
@@ -1800,12 +1809,12 @@ inline void TOrderedSlots<TIndex, TMeta>::avl_remove(const std::int32_t slot_ind
         }
 
         successor.child_index[0] = slot.child_index[0];
-        m_meta_slot_array[successor.child_index[0]].parent_index = successor_index;
+        meta[successor.child_index[0]].parent_index = successor_index;
 
         successor.parent_index = parent_index;
         if (parent_index >= 0)
         {
-            m_meta_slot_array[parent_index].child_index[parent_side] = successor_index;
+            meta[parent_index].child_index[parent_side] = successor_index;
         }
         else
         {
@@ -1821,7 +1830,7 @@ inline void TOrderedSlots<TIndex, TMeta>::avl_remove(const std::int32_t slot_ind
 
         if (parent_index >= 0)
         {
-            m_meta_slot_array[parent_index].child_index[parent_side] = child_index;
+            meta[parent_index].child_index[parent_side] = child_index;
         }
         else
         {
@@ -1830,7 +1839,7 @@ inline void TOrderedSlots<TIndex, TMeta>::avl_remove(const std::int32_t slot_ind
 
         if (child_index >= 0)
         {
-            m_meta_slot_array[child_index].parent_index = parent_index;
+            meta[child_index].parent_index = parent_index;
         }
 
         walk_index = parent_index;
@@ -1841,7 +1850,7 @@ inline void TOrderedSlots<TIndex, TMeta>::avl_remove(const std::int32_t slot_ind
     std::int32_t delta = (walk_side << 1) - 1;
     while (walk_index >= 0)
     {
-        Slot& walk = m_meta_slot_array[walk_index];
+        Slot& walk = meta[walk_index];
 
         //  subtree parent is not changed by rotation, but
         //  walk.parent_index may change, so grab it now.
@@ -1858,7 +1867,7 @@ inline void TOrderedSlots<TIndex, TMeta>::avl_remove(const std::int32_t slot_ind
             const std::int32_t heavy_side = (walk.balance_factor > 0) ? 1 : 0;
             const std::int32_t expected_child_balance_factor = (heavy_side << 1) - 1;
     
-            Slot& child = m_meta_slot_array[walk.child_index[heavy_side]];
+            Slot& child = meta[walk.child_index[heavy_side]];
             const std::int32_t child_balance_factor = child.balance_factor;
     
             if ((child_balance_factor == 0) || (child_balance_factor == expected_child_balance_factor))
@@ -1866,7 +1875,7 @@ inline void TOrderedSlots<TIndex, TMeta>::avl_remove(const std::int32_t slot_ind
                 const std::int32_t rebalance_factor = expected_child_balance_factor - child_balance_factor;
                 walk_index = avl_single_rotate(walk_index, heavy_side);
                 walk.balance_factor = rebalance_factor;
-                m_meta_slot_array[walk_index].balance_factor = -rebalance_factor;
+                meta[walk_index].balance_factor = -rebalance_factor;
                 if (child_balance_factor == 0)
                 {
                     break;
@@ -1875,14 +1884,14 @@ inline void TOrderedSlots<TIndex, TMeta>::avl_remove(const std::int32_t slot_ind
             else
             {
                 walk_index = avl_double_rotate(walk_index, heavy_side);
-                if (m_meta_slot_array[walk_index].balance_factor != 0)
+                if (meta[walk_index].balance_factor != 0)
                 {
                     break;
                 }
             }
         }
     
-        delta = ((walk_parent_index >= 0) && (m_meta_slot_array[walk_parent_index].child_index[1] == walk_index)) ? 1 : -1;
+        delta = ((walk_parent_index >= 0) && (meta[walk_parent_index].child_index[1] == walk_index)) ? 1 : -1;
         walk_index = walk_parent_index;
     }
 
@@ -2018,9 +2027,10 @@ inline bool TOrderedSlots<TIndex, TMeta>::failed_integrity_check() noexcept
 template<typename TIndex, typename TMeta>
 inline bool TOrderedSlots<TIndex, TMeta>::private_integrity_check() const noexcept
 {
-    if (m_meta_slot_array != nullptr)
+    const Slot* const meta = m_meta_slot_array;
+    if (meta != nullptr)
     {
-        if ((std::uintptr_t(m_meta_slot_array) % alignof(Slot)) != 0u)
+        if ((std::uintptr_t(meta) % alignof(Slot)) != 0u)
         {   //  basic slot array alignment check failed
             return failed_integrity_check();
         }
@@ -2062,7 +2072,7 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_integrity_check() const noexce
         std::uint32_t empty_count = 0;
         for (std::int32_t slot_index = static_cast<std::int32_t>(m_capacity - 1u); slot_index >= 0; --slot_index)
         {   //  basic array integrity check
-            const Slot& slot = m_meta_slot_array[slot_index];
+            const Slot& slot = meta[slot_index];
             switch (slot.get_slot_state())
             {
                 case (SlotState::is_lexed_slot):
@@ -2084,21 +2094,21 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_integrity_check() const noexce
                     {   //  invalid: children reference the parent slot or vice-versa
                         return failed_integrity_check();
                     }
-                    if ((slot.parent_index != -1) && !m_meta_slot_array[slot.parent_index].is_lexed_slot())
+                    if ((slot.parent_index != -1) && !meta[slot.parent_index].is_lexed_slot())
                     {   //  invalid: parent index references outside of the tree
                         return failed_integrity_check();
                     }
-                    if ((slot.child_index[0] != -1) && !m_meta_slot_array[slot.child_index[0]].is_lexed_slot())
+                    if ((slot.child_index[0] != -1) && !meta[slot.child_index[0]].is_lexed_slot())
                     {   //  invalid: child index references outside of the tree
                         return failed_integrity_check();
                     }
-                    if ((slot.child_index[1] != -1) && !m_meta_slot_array[slot.child_index[1]].is_lexed_slot())
+                    if ((slot.child_index[1] != -1) && !meta[slot.child_index[1]].is_lexed_slot())
                     {   //  invalid: child index references outside of the tree
                         return failed_integrity_check();
                     }
                     if (slot.parent_index != -1)
                     {   //  not a root node
-                        const Slot& parent_slot = m_meta_slot_array[slot.parent_index];
+                        const Slot& parent_slot = meta[slot.parent_index];
                         if ((slot_index != parent_slot.child_index[0]) && (slot_index != parent_slot.child_index[1]))
                         {   //  invalid: this node is not a child of its parent node
                             return failed_integrity_check();
@@ -2124,7 +2134,7 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_integrity_check() const noexce
                                 return failed_integrity_check();
                             }
                         }
-                        else if (slot_index != m_meta_slot_array[slot.child_index[0]].parent_index)
+                        else if (slot_index != meta[slot.child_index[0]].parent_index)
                         {   //  invalid: the left child is not parented to this slot
                             return failed_integrity_check();
                         }
@@ -2135,7 +2145,7 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_integrity_check() const noexce
                                 return failed_integrity_check();
                             }
                         }
-                        else if (slot_index != m_meta_slot_array[slot.child_index[1]].parent_index)
+                        else if (slot_index != meta[slot.child_index[1]].parent_index)
                         {   //  invalid: the right child is not parented to this slot
                             return failed_integrity_check();
                         }
@@ -2190,12 +2200,12 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_integrity_check() const noexce
             std::int32_t empty_index = m_empty_list_head;
             while (empty_count != 0)
             {
-                const Slot& slot = m_meta_slot_array[empty_index];
+                const Slot& slot = meta[empty_index];
                 if (!slot.is_empty_slot())
                 {   //  the empty list links to a non-empty slot
                     return failed_integrity_check();
                 }
-                if (m_meta_slot_array[slot.child_index[1]].child_index[0] != empty_index)
+                if (meta[slot.child_index[1]].child_index[0] != empty_index)
                 {   //  bi-directional linkage is broken
                     return failed_integrity_check();
                 }
@@ -2216,12 +2226,12 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_integrity_check() const noexce
             std::int32_t loose_index = m_loose_list_head;
             while (loose_count != 0)
             {
-                const Slot& slot = m_meta_slot_array[loose_index];
+                const Slot& slot = meta[loose_index];
                 if (!slot.is_loose_slot())
                 {   //  the loose list links to a non-loose slot
                     return failed_integrity_check();
                 }
-                if (m_meta_slot_array[slot.child_index[1]].child_index[0] != loose_index)
+                if (meta[slot.child_index[1]].child_index[0] != loose_index)
                 {   //  bi-directional linkage is broken
                     return failed_integrity_check();
                 }
@@ -2240,7 +2250,7 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_integrity_check() const noexce
         if (lexed_count != 0)
         {   //  validate the tree and balance
 
-            if (m_meta_slot_array[m_lexed_tree_root].parent_index != -1)
+            if (meta[m_lexed_tree_root].parent_index != -1)
             {   //  the root is invalid
                 return failed_integrity_check();
             }
@@ -2276,7 +2286,7 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_integrity_check() const noexce
             std::int32_t scan_index = m_lexed_tree_root;
             while (scan_index >= 0)
             {
-                const Slot& slot = m_meta_slot_array[scan_index];
+                const Slot& slot = meta[scan_index];
 
                 if (from_index == slot.parent_index)
                 {   //  came from parent
@@ -2540,15 +2550,16 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::private_acquire(const std::int
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::private_prev_lexed(const std::int32_t slot_index) const noexcept
 {
+    const Slot* const meta = m_meta_slot_array;
     std::int32_t prev_index = -1;
-    std::int32_t from_index = m_meta_slot_array[slot_index].child_index[0];
+    std::int32_t from_index = meta[slot_index].child_index[0];
     if (from_index < 0)
     {
-        for (from_index = slot_index; (((prev_index = m_meta_slot_array[from_index].parent_index) >= 0) && (m_meta_slot_array[prev_index].child_index[1] != from_index)); from_index = prev_index) {}
+        for (from_index = slot_index; (((prev_index = meta[from_index].parent_index) >= 0) && (meta[prev_index].child_index[1] != from_index)); from_index = prev_index) {}
     }
     else
     {
-        for (prev_index = from_index; ((from_index = m_meta_slot_array[prev_index].child_index[1]) >= 0); prev_index = from_index) {}
+        for (prev_index = from_index; ((from_index = meta[prev_index].child_index[1]) >= 0); prev_index = from_index) {}
     }
     return prev_index;
 }
@@ -2556,15 +2567,16 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::private_prev_lexed(const std::
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::private_next_lexed(const std::int32_t slot_index) const noexcept
 {
+    const Slot* const meta = m_meta_slot_array;
     std::int32_t next_index = -1;
-    std::int32_t from_index = m_meta_slot_array[slot_index].child_index[1];
+    std::int32_t from_index = meta[slot_index].child_index[1];
     if (from_index < 0)
     {
-        for (from_index = slot_index; (((next_index = m_meta_slot_array[from_index].parent_index) >= 0) && (m_meta_slot_array[next_index].child_index[0] != from_index)); from_index = next_index) {}
+        for (from_index = slot_index; (((next_index = meta[from_index].parent_index) >= 0) && (meta[next_index].child_index[0] != from_index)); from_index = next_index) {}
     }
     else
     {
-        for (next_index = from_index; ((from_index = m_meta_slot_array[next_index].child_index[0]) >= 0); next_index = from_index) {}
+        for (next_index = from_index; ((from_index = meta[next_index].child_index[0]) >= 0); next_index = from_index) {}
     }
     return next_index;
 }
@@ -2579,6 +2591,7 @@ template<typename TIndex, typename TMeta>
 inline bool TOrderedSlots<TIndex, TMeta>::private_has_duplicate_key_in_lexed(const std::int32_t slot_index) const noexcept
 {
     MV_HARD_ASSERT(m_lock == LockState::on_compare_keys);
+    const Slot* const meta = m_meta_slot_array;
     bool has_duplicate = false;
     std::int32_t lexed_index = -1;
     std::int32_t check_index = m_lexed_tree_root;
@@ -2589,21 +2602,21 @@ inline bool TOrderedSlots<TIndex, TMeta>::private_has_duplicate_key_in_lexed(con
         {
             lexed_index = check_index;
         }
-        check_index = m_meta_slot_array[check_index].child_index[(relationship <= 0) ? 0 : 1];
+        check_index = meta[check_index].child_index[(relationship <= 0) ? 0 : 1];
     }
     if (lexed_index >= 0)
     {
         has_duplicate = true;
         if (lexed_index == slot_index)
         {   //  the found index needs to be excluded, find the next in-order index and see if it also matches
-            check_index = m_meta_slot_array[lexed_index].child_index[1];
+            check_index = meta[lexed_index].child_index[1];
             if (check_index < 0)
             {
-                for (check_index = lexed_index; (((lexed_index = m_meta_slot_array[check_index].parent_index) >= 0) && (m_meta_slot_array[lexed_index].child_index[0] != check_index)); check_index = lexed_index) {}
+                for (check_index = lexed_index; (((lexed_index = meta[check_index].parent_index) >= 0) && (meta[lexed_index].child_index[0] != check_index)); check_index = lexed_index) {}
             }
             else
             {
-                for (lexed_index = check_index; ((check_index = m_meta_slot_array[lexed_index].child_index[0]) >= 0); lexed_index = check_index) {}
+                for (lexed_index = check_index; ((check_index = meta[lexed_index].child_index[0]) >= 0); lexed_index = check_index) {}
             }
             if ((lexed_index < 0) || (on_compare_keys(slot_index, lexed_index) != 0))
             {   //  there is no non-excluded match
@@ -2742,40 +2755,41 @@ inline std::int32_t TOrderedSlots<TIndex, TMeta>::build_balanced_subtree(const s
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::lexed_to_list() noexcept
 {
+    Slot* const meta = m_meta_slot_array;
     std::int32_t list_index = -1;
     std::int32_t scan_index = -1;
-    for (list_index = m_lexed_tree_root; list_index >= 0; list_index = m_meta_slot_array[scan_index = list_index].child_index[1]) {}
+    for (list_index = m_lexed_tree_root; list_index >= 0; list_index = meta[scan_index = list_index].child_index[1]) {}
     if (scan_index >= 0)
     {
         std::int32_t from_index = -1;
         while (scan_index >= 0)
         {
-            Slot& slot = m_meta_slot_array[scan_index];
+            Slot& slot = meta[scan_index];
             slot.child_index[1] = static_cast<TIndex>(list_index);
             list_index = scan_index;
             from_index = slot.child_index[0];
             if (from_index < 0)
             {
-                for (from_index = scan_index; ((scan_index = m_meta_slot_array[from_index].parent_index) >= 0) && (m_meta_slot_array[scan_index].child_index[1] != from_index); from_index = scan_index) {}
+                for (from_index = scan_index; ((scan_index = meta[from_index].parent_index) >= 0) && (meta[scan_index].child_index[1] != from_index); from_index = scan_index) {}
             }
             else
             {
-                for (scan_index = from_index; (from_index = m_meta_slot_array[scan_index].child_index[1]) >= 0; scan_index = from_index) {}
+                for (scan_index = from_index; (from_index = meta[scan_index].child_index[1]) >= 0; scan_index = from_index) {}
             }
         }
         from_index = -1;
         scan_index = list_index;
         while (scan_index >= 0)
         {
-            Slot& slot = m_meta_slot_array[scan_index];
+            Slot& slot = meta[scan_index];
             slot.parent_index = -1;
             slot.child_index[0] = static_cast<TIndex>(from_index);
             slot.balance_factor = 0;
             from_index = scan_index;
             scan_index = slot.child_index[1];
         }
-        m_meta_slot_array[list_index].child_index[0] = static_cast<TIndex>(from_index);
-        m_meta_slot_array[from_index].child_index[1] = static_cast<TIndex>(list_index);
+        meta[list_index].child_index[0] = static_cast<TIndex>(from_index);
+        meta[from_index].child_index[1] = static_cast<TIndex>(list_index);
     }
     return list_index;
 }

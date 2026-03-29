@@ -1075,7 +1075,9 @@ inline bool TUnorderedSlots<TIndex>::private_integrity_check() const noexcept
 {
     if (m_meta_slot_array != nullptr)
     {
-        if ((std::uintptr_t(m_meta_slot_array) % alignof(Slot)) != 0u)
+        const Slot* const meta = m_meta_slot_array;
+
+        if ((std::uintptr_t(meta) % alignof(Slot)) != 0u)
         {   //  basic slot array alignment check failed
             return failed_integrity_check();
         }
@@ -1111,7 +1113,7 @@ inline bool TUnorderedSlots<TIndex>::private_integrity_check() const noexcept
         std::uint32_t empty_count = 0;
         for (std::int32_t slot_index = static_cast<std::int32_t>(m_capacity - 1u); slot_index >= 0; --slot_index)
         {   //  basic array integrity check
-            const Slot& slot = m_meta_slot_array[slot_index];
+            const Slot& slot = meta[slot_index];
             SlotState state = slot.get_slot_state();
             if ((state == SlotState::is_loose_slot) || (state == SlotState::is_empty_slot))
             {
@@ -1146,12 +1148,12 @@ inline bool TUnorderedSlots<TIndex>::private_integrity_check() const noexcept
             std::int32_t empty_index = m_empty_list_head;
             while (empty_count != 0)
             {
-                const Slot& slot = m_meta_slot_array[empty_index];
+                const Slot& slot = meta[empty_index];
                 if (!slot.is_empty_slot())
                 {   //  the empty list links to a non-empty slot
                     return failed_integrity_check();
                 }
-                if (m_meta_slot_array[slot.get_next_index()].get_prev_index() != empty_index)
+                if (meta[slot.get_next_index()].get_prev_index() != empty_index)
                 {   //  bi-directional linkage is broken
                     return failed_integrity_check();
                 }
@@ -1172,12 +1174,12 @@ inline bool TUnorderedSlots<TIndex>::private_integrity_check() const noexcept
             std::int32_t loose_index = m_loose_list_head;
             while (loose_count != 0)
             {
-                const Slot& slot = m_meta_slot_array[loose_index];
+                const Slot& slot = meta[loose_index];
                 if (!slot.is_loose_slot())
                 {   //  the loose list links to a non-loose slot
                     return failed_integrity_check();
                 }
-                if (m_meta_slot_array[slot.get_next_index()].get_prev_index() != loose_index)
+                if (meta[slot.get_next_index()].get_prev_index() != loose_index)
                 {   //  bi-directional linkage is broken
                     return failed_integrity_check();
                 }
@@ -1211,22 +1213,27 @@ template<typename TIndex>
 inline void TUnorderedSlots<TIndex>::private_on_visit_dispatcher(const bool visit_loose, const bool visit_empty) noexcept
 {
     MV_HARD_ASSERT(m_lock == LockState::on_visit);
-    if (visit_loose)
+
+    const Slot* const meta = m_meta_slot_array;
+    if (meta != nullptr)
     {
-        std::int32_t slot_index = m_loose_list_head;
-        for (std::uint32_t loose_count = m_loose_count; loose_count != 0; --loose_count)
+        if (visit_loose)
         {
-            on_visit(slot_index, -1);
-            slot_index = m_meta_slot_array[slot_index].get_next_index();
+            std::int32_t slot_index = m_loose_list_head;
+            for (std::uint32_t loose_count = m_loose_count; loose_count != 0; --loose_count)
+            {
+                on_visit(slot_index, -1);
+                slot_index = meta[slot_index].get_next_index();
+            }
         }
-    }
-    if (visit_empty)
-    {
-        std::int32_t slot_index = m_empty_list_head;
-        for (std::uint32_t empty_count = m_empty_count; empty_count != 0; --empty_count)
+        if (visit_empty)
         {
-            on_visit(slot_index, -2);
-            slot_index = m_meta_slot_array[slot_index].get_next_index();
+            std::int32_t slot_index = m_empty_list_head;
+            for (std::uint32_t empty_count = m_empty_count; empty_count != 0; --empty_count)
+            {
+                on_visit(slot_index, -2);
+                slot_index = meta[slot_index].get_next_index();
+            }
         }
     }
 }
