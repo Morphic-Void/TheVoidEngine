@@ -110,9 +110,9 @@ static std::string vec_i32_to_string(const std::vector<int32_t>& v)
 // Harness: derived test adapter
 // -----------------------------
 template<typename TIndex>
-class TUnorderedSlots_Test final : private TUnorderedSlots<TIndex>
+class TUnorderedSlots_Test final : private slots::TUnorderedSlots<TIndex>
 {
-    using Base = TUnorderedSlots<TIndex>;
+    using Base = slots::TUnorderedSlots<TIndex>;
 
 public:
     struct VisitRec { int32_t slot = -1; int32_t id = -999; };

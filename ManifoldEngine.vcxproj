@@ -161,6 +161,7 @@
     <ClInclude Include="include\bit_utils\bit_utils.hpp" />
     <ClInclude Include="include\bit_utils\spatial_codes.hpp" />
     <ClInclude Include="include\containers\ByteBuffers.hpp" />
+    <ClInclude Include="include\containers\SlotsRankMap.hpp" />
     <ClInclude Include="include\containers\StringBuffers.hpp" />
     <ClInclude Include="include\containers\TOrderedSlots.hpp" />
     <ClInclude Include="include\containers\TPodVector.hpp" />

@@ -112,9 +112,9 @@ static bool parse_i64(const std::string& s, int64_t& out_v)
 // Harness: derived test adapter
 // -----------------------------
 template<typename TIndex, typename TMeta>
-class TOrderedSlots_Test final : private TOrderedSlots<TIndex, TMeta>
+class TOrderedSlots_Test final : private slots::TOrderedSlots<TIndex, TMeta>
 {
-    using Base = TOrderedSlots<TIndex, TMeta>;
+    using Base = slots::TOrderedSlots<TIndex, TMeta>;
 
 public:
     TOrderedSlots_Test() noexcept = default;

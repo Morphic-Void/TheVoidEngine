@@ -1,72 +1,105 @@
 
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
-// 
+//
 //  File:   TUnorderedSlots.hpp
 //  Author: Ritchie Brannan
 //  Date:   10 Jan 26
 //
-// 
+//
 //  IMPORTANT SEMANTIC NOTE:
 //
-//  In TUnorderedSlots, TRAVERSAL ORDER IS LIST ORDER.
-// 
-//  Traversal order does NOT define rank order.
+//  In TUnorderedSlots, traversal order is list order.
+//  Traversal order does not define rank.
 //
-//  on_visit() traverses in list order only. No rank_index is
-//  supplied or implied during traversal.
+//  Rank is defined over loose slots only.
+//  rank(slot_index) == number of loose slots with lower slot index.
+//  Empty slots have no rank and return -1.
+//  Valid rank domain is [0, loose_count()).
 //
-//  After pack(), the loose list is rebuilt in ascending slot
-//  index order, and the packed position is equal to slot_index.
+//  pack() compacts loose payload into slot indices [0, loose_count())
+//  and rebuilds the loose and empty lists in ascending slot index order.
+//  pack() does not preserve empty-slot payload, does not define rank,
+//  and does not provide full-domain remapping.
 //
-//  Prior to pack(), no dense rank ordering is implied.
+//  Do not assume that TOrderedSlots rank or remapping semantics apply here.
 //
-//  Do not assume that TOrderedSlots rank semantics apply here.
-// 
-// 
+//
 //  TUnorderedSlots<TIndex>
 //
 //  Overview
 //  --------
-//  TUnorderedSlots is a single-threaded unordered index
-//  over an external slot array.
+//  TUnorderedSlots is a single-threaded unordered index over an external slot array.
 //
-//  The template owns and manages only slot metadata:
+//  The template owns and manages slot metadata only:
 //      - Bi-directional list links (prev_index, next_index)
-//      - Slot state (loose / empty / unassigned / terminator)
+//      - Slot state (loose / empty / internal transitional states)
 //      - Category counts and high/peak tracking
 //
 //  The derived class owns the payload and must implement:
 //
-//      on_visit(slot_index)
+//      on_visit(slot_index, identifier)
 //      on_move_payload(source_index, target_index)
 //      on_reserve_empty(minimum_capacity, recommended_capacity)
 //
-//  Slot Model
-//  ----------
-//  Slot indices are integers in [0, capacity()). Each index addresses both
-//  slot metadata and its corresponding derived payload element.
 //
-//  Slot categories:
-//      Loose  - acquired/occupied
-//      Empty  - available for acquisition
+//  Scope
+//  -----
+//  - Metadata only; no payload ownership
+//  - No payload construction or destruction
+//  - Payload movement semantics are defined by the derived class
 //
-//  Steady-State Invariants
-//  -----------------------
-//  - m_loose_count + m_empty_count == m_capacity
-//  - Loose and empty slots form circular bi-directional lists
-//  - m_high_index is the highest occupied slot index (or -1 if none)
-//  - m_peak_usage and m_peak_index record historical maxima
-//  - No slot belongs to more than one category
+//
+//  State model
+//  -----------
+//  Slot indices are integers in [0, capacity()).
+//  Each slot index addresses both slot metadata and its corresponding derived payload element.
+//
+//  Steady-state slot categories:
+//      Loose  - occupied, identity-bearing payload
+//      Empty  - available free space
+//
+//  Steady-state invariants:
+//      - m_loose_count + m_empty_count == m_capacity
+//      - Loose and empty slots each form a circular bi-directional list
+//      - m_high_index is the highest occupied slot index (or -1 if none)
+//      - m_peak_usage and m_peak_index record historical maxima
+//      - No slot belongs to more than one steady-state category
+//
+//  Internal transitional states are implementation detail only and are not part of the external model.
+//
+//
+//  Observation model
+//  -----------------
+//  Traversal order:
+//      - Defined strictly by loose/empty list order
+//      - No rank information is supplied or implied during traversal
+//
+//  Rank:
+//      - Defined strictly by ascending slot index over loose slots
+//      - rank(slot_index) == number of loose slots with lower slot index
+//      - Valid rank domain is [0, loose_count())
+//      - Empty slots have no rank and return -1
+//
+//  Pack result:
+//      - Loose payload is compacted into [0, loose_count())
+//      - Remaining slots are Empty
+//      - Loose and empty lists are rebuilt in ascending slot index order
+//
+//  Only loose slots are identity-bearing.
+//  Empty slots are free space only.
+//  No full-domain remapping guarantee is provided.
+//
 //
 //  Lifecycle
 //  ---------
 //  - initialise(capacity) allocates metadata and marks all slots Empty
 //  - shutdown() releases metadata and resets to uninitialised
 //  - safe_resize()/reserve_empty() adjust capacity subject to invariants
-//  - pack() physically moves payload removing gaps and rebuilds metadata
+//  - pack() compacts loose payload and rebuilds metadata
 //
-//  Locking and Re-Entry Model
+//
+//  Locking and re-entry model
 //  --------------------------
 //  The template is strictly single-threaded.
 //
@@ -75,6 +108,9 @@
 //      LockState::on_visit
 //      LockState::on_move_payload
 //      LockState::on_reserve_empty
+//
+//  Bulk operations hold the corresponding lock for the duration of the coordinated phase.
+//  Virtual callbacks execute within that locked phase.
 //
 //  While locked:
 //      - Only explicitly safe accessor functions may be called
@@ -91,23 +127,59 @@
 //  These functions are non-mutating, do not acquire locks,
 //  do not invoke virtual functions, and do not call is_safe().
 //
-//  Integrity and Validation
-//  ------------------------
-//  - check_integrity() validates metadata invariants, counts, list structure, and index ranges.
 //
-//  Capacity Constraints
-//  --------------------
+//  Integrity and validation
+//  ------------------------
+//  - check_integrity() validates metadata invariants, counts, list structure, and index ranges
+//
+//
+//  Capacity model
+//  --------------
 //  - Maximum supported slot index is std::numeric_limits<TIndex>::max()
 //  - capacity_limit() == index_limit() + 1
-//  - minimum_safe_capacity() == (m_high_index + 1)
+//  - minimum_safe_capacity() == high_index() + 1
+//  - Growth is constrained by the slot index domain, not just by loose_count()
 //
-//  Type Constraints
+//
+//  Migration and alignment with TOrderedSlots
+//  ------------------------------------------
+//  TOrderedSlots and TUnorderedSlots define rank differently.
+//
+//  TOrderedSlots:
+//      - Rank is full-domain
+//      - Occupied and empty slots both participate in remapping
+//      - pack()/sort_and_pack() perform total reordering
+//
+//  TUnorderedSlots:
+//      - Rank is occupied-domain only
+//      - Empty slots have no rank and no stable identity
+//      - pack() performs occupied compaction only
+//
+//  Migration constraints:
+//
+//      - Do not assume empty-slot payload preservation
+//      - Do not assume empty-slot remapping
+//      - Do not assume full-domain rank behaviour
+//
+//      - Do not treat TOrderedSlots rank as occupied-only
+//      - Do not treat ordered/full-domain operations as simple compaction
+//
+//  A derived class may implement on_move_payload() using swap-like behaviour.
+//  In TUnorderedSlots this avoids destructive empty-slot behaviour.
+//  In TOrderedSlots this is safe but typically less efficient than full-domain reordering.
+// 
+//  When migrating code written only for TUnorderedSlots, do not assume that
+//  TOrderedSlots::on_move_payload() uses only non-negative indices.
+//
+//
+//  Type constraints
 //  ----------------
 //  Supported types:
 //      std::int32_t
 //      std::int16_t
 //
-//  Slot metadata layout is constrained for predictable packing.
+//  TIndex must be signed.
+//  Slot metadata representation is constrained for compact flag/index encoding.
 //  Slot must be trivially copyable.
 
 #pragma once
@@ -122,17 +194,19 @@
 #include <limits>       //  std::numeric_limits
 #include <type_traits>  //  std::is_trivially_copyable_v, std::is_signed_v, std::is_same_v
 
-#include "TPodVector.hpp"
+#include "SlotsRankMap.hpp"
 #include "memory/memory_allocation.hpp"
-#include "debug/debug.hpp"
+#include "memory/memory_primitives.hpp"
 
-/// Unordered index over slot metadata for externally stored payload items.
+namespace slots
+{
+
+/// Unordered metadata index over externally stored payload.
 ///
-/// TUnorderedSlots stores only slot metadata (list links and occupancy state).
-/// The derived class owns the payload items and defines how payload items are
-/// moved between slots.
+/// TUnorderedSlots stores slot metadata only. The derived class owns payload
+/// storage and defines payload movement semantics.
 ///
-/// See docs/TUnorderedSlots.md for full terminology and usage patterns.
+/// See docs/TUnorderedSlots.md for the full model and terminology.
 template<typename TIndex = std::int32_t>
 class TUnorderedSlots
 {
@@ -149,11 +223,11 @@ public:
 
 protected:
 
-    //  Protected functions represent the derived class facing interface.
+    //  Protected functions form the derived-facing interface.
 
 private:
 
-    //  Private functions are implementation details of the template.
+    //  Private functions are implementation details.
 
 protected:
 
@@ -194,78 +268,114 @@ protected:
     //  Calls shutdown() then allocates and initialises all management data.
     [[nodiscard]] bool initialise(const std::uint32_t capacity = 32) noexcept;
 
-    //  Capacity management functions.
+    //  Capacity management.
+    //
+    //  These functions preserve loose slots and do not compact payload.
     [[nodiscard]] bool safe_resize(const std::uint32_t requested_capacity) noexcept;
     [[nodiscard]] bool reserve_empty(const std::uint32_t slot_count) noexcept;
     [[nodiscard]] bool shrink_to_fit() noexcept;
 
-    //  Acquire an empty slot.
-    //  If slot_index is -1, acquires the first slot from the empty list.
-    //  Returns the acquired slot index, or -1 on failure.
+    //  Acquire an empty slot and move it to the loose category.
+    //
+    //  slot_index == -1 selects the default empty slot.
+    //  acquire() does not grow capacity.
+    //  reserve_and_acquire() may grow capacity first.
+    //  Both return the acquired slot index, or -1 on failure.
     [[nodiscard]] std::int32_t acquire(const std::int32_t slot_index = -1) noexcept;
-
-    //  Reserve space to acquire the requested slot and then acquire it.
-    //  Returns the acquired slot index, or -1 on failure.
     [[nodiscard]] std::int32_t reserve_and_acquire(const std::int32_t slot_index = -1) noexcept;
 
-    //  Assign a slot to the empty list removing it from loose list.
-    //  The derived class is responsible for handling or discarding the payload item(s).
-    //  Returns false if the slot was invalid or empty.
+    //  Return a loose slot to the empty category.
+    //
+    //  Payload handling is the responsibility of the derived class.
+    //  Returns false if slot_index is invalid or not loose.
     bool erase(const std::int32_t slot_index) noexcept;
 
-    //  Slot categorisation functions.
+    //  Slot-category queries by slot index.
+    //
+    //  is_safe_slot() checks that the structure is safe and
+    //  slot_index is in [0, capacity()).
+    //
+    //  is_loose_slot() and is_empty_slot() add the corresponding category check.
+    [[nodiscard]] bool is_safe_slot(const std::int32_t slot_index) const noexcept;
     [[nodiscard]] bool is_loose_slot(const std::int32_t slot_index) const noexcept;
     [[nodiscard]] bool is_empty_slot(const std::int32_t slot_index) const noexcept;
 
-    //  Traversal of loose payload items using slot indices.
+    //  Loose-list traversal by slot index.
+    //
+    //  These functions operate in loose-list order only.
+    //  They do not imply or expose occupied-domain rank order.
+    //
+    //  first_loose()/last_loose() return the list head/tail, or -1 if there
+    //  are no loose slots or the structure is not safe.
+    //
+    //  prev_loose()/next_loose() return the adjacent loose slot in list order,
+    //  or -1 if slot_index is invalid or not loose.
     [[nodiscard]] std::int32_t first_loose() const noexcept;
     [[nodiscard]] std::int32_t last_loose() const noexcept;
     [[nodiscard]] std::int32_t prev_loose(const std::int32_t slot_index) const noexcept;
     [[nodiscard]] std::int32_t next_loose(const std::int32_t slot_index) const noexcept;
 
-    //  Physically reorder payload items.
+    //  Build an occupied-domain rank/slot mapping for loose slots.
+    //
+    //  Rank is defined by ascending slot index over loose slots only.
+    //  Empty slots do not participate and map to -1.
+    //
+    //  RankMap size is capacity().
+    //  rank_to_slot is valid for ranks in [0, loose_count()).
+    //  slot_to_rank is valid for loose slots only.
+    //  All other entries use -1 sentinels.
+    //
+    //  On failure, or if no mapping can be built, the returned RankMap is empty.
+    [[nodiscard]] RankMap build_rank_map() const noexcept;
+
+    //  Compact loose payload into the lowest slot indices.
     //
     //  After completion:
-    //      - Loose payload items occupy slot indices [0, loose_count()).
-    //      - All remaining slots are Empty.
+    //      - Loose payload occupies slot indices [0, loose_count()).
+    //      - Remaining slots are Empty.
+    //      - Loose and empty lists are rebuilt in ascending slot index order.
     //
-    //  Uses on_move_payload().
+    //  Uses on_move_payload() to coordinate derived payload movement.
+    //  Empty-slot payload is not preserved.
+    //  This operation does not define rank and does not provide full-domain remapping.
     void pack() noexcept;
 
-    //  Index order list rebuilding utilities.
-    //  For loose slots index order == rank_index order.
+    //  Rebuild the loose list in ascending slot index order.
+    //
+    //  After completion, loose list order and rank order are identical.
     void rebuild_loose_in_index_order() noexcept;
+
+    //  Rebuild the empty list in ascending slot index order.
+    //
+    //  Empty slots do not participate in rank.
     void rebuild_empty_in_index_order() noexcept;
 
-    //  Build slot_index -> rank_index mapping.
-    //  The rank represents the index of the slot payload after sort_and_pack().
-    //  Loose slots have ranks in the range [0, loose_count()).
-    //  Empty slots have a rank of -1 (empty index order is indeterminate).
-    //  The returned vector may be empty, indicating failure or no data.
-    [[nodiscard]] TPodVector<std::int32_t> build_rank_indices() const noexcept;
-
-    //  Build slot_index -> rank_index mapping.
-    //  The out_rank_indices array must have capacity() or more entries.
-    [[nodiscard]] bool build_rank_indices(std::int32_t* const out_rank_indices) const noexcept;
-
-    //  Return the ranked index of a payload item by slot index, or -1 if the slot is empty.
+    //  Return the rank of a loose slot by slot index.
+    //
+    //  Rank is the number of loose slots with lower slot index.
+    //  Returns -1 if the slot is invalid or Empty.
     [[nodiscard]] std::int32_t rank_index_of(const std::int32_t slot_index) const noexcept;
 
-    //  Return the slot index of a payload item by its ranked index, or -1 if the ranked index out of range.
+    //  Return the slot index of a loose slot by rank.
+    //
+    //  Valid rank domain is [0, loose_count()).
+    //  Returns -1 if rank_index is out of range.
     [[nodiscard]] std::int32_t find_by_rank_index(const std::int32_t rank_index) const noexcept;
 
-    //  Visit one or more slot categories.
+    //  Visit one or more slot categories in list order.
     //
     //  For each visited slot, calls on_visit(slot_index, identifier).
-    //  The identifier is category-derived and is not a slot or rank index:
+    //  identifier is category-derived and is not a slot index or rank:
     //
     //      - identifier == -1 for loose slots
     //      - identifier == -2 for empty slots
+    //
+    //  visit_all() visits loose first, then empty.
     void visit_loose() noexcept;
     void visit_empty() noexcept;
     void visit_all() noexcept;
 
-    //  Integrity check.
+    //  Validate metadata integrity in stable state.
     [[nodiscard]] bool check_integrity() const noexcept;
 
 protected:
@@ -282,9 +392,9 @@ protected:
     //  All other functions are unsafe when called from these virtual functions,
     //  and calling them will result in a soft-fail (hard-fail in debug).
 
-    /// Visit callback for category traversal.
+    /// Visit callback for category traversal in list order.
     ///
-    /// identifier is category-derived and is not a slot index:
+    /// identifier is category-derived and is not a slot index or rank:
     ///
     ///     - identifier == -1 for loose slots
     ///     - identifier == -2 for empty slots
@@ -293,22 +403,37 @@ protected:
         (void)slot_index;
     }
 
-    /// Move a payload item between slots.
+    /// Move derived payload during coordinated compaction.
     ///
-    /// Contract:
-    ///   - source_index != target_index always
-    ///   - exactly one of {source_index, target_index} may be -1
-    ///   - -1 indicates temporary storage owned by the derived class
+    /// Called only by pack().
     ///
-    /// This function is only called by pack().
+    /// TUnorderedSlots contract:
+    ///   - source_index != target_index
+    ///   - source_index and target_index are non-negative
+    ///   - source_index references a loose slot
+    ///   - target_index is in [0, loose_count())
+    ///   - target_index may currently hold empty-slot payload
+    ///
+    /// Empty-slot payload preservation is not required.
+    /// The derived class must implement overwrite-safe behaviour.
+    /// A preserving implementation may use swap-like movement, but the template
+    /// guarantees compaction only.
+    ///
+    /// Migration note:
+    ///   - TOrderedSlots may use -1 to denote derived temporary storage.
+    ///   - TUnorderedSlots does not use -1 here.
+    ///   - Code written for TOrderedSlots is usually safe here.
+    ///   - Code written only for TUnorderedSlots may be unsafe in TOrderedSlots.
     virtual void on_move_payload(const std::int32_t source_index, const std::int32_t target_index) noexcept
     {
         (void)source_index;
         (void)target_index;
     }
 
-    /// Handshake with the derived class to approve and finalise reserve_empty() or reserve_and_acquire() growth.
-    /// Return an absolute capacity to apply; returned capacities < min_required_capacity will cause the caller to soft fail.
+    /// Approve and finalise growth for reserve_empty() or reserve_and_acquire().
+    ///
+    /// Returns the absolute capacity to apply.
+    /// Returning a value less than minimum_capacity causes the caller to fail.
     virtual [[nodiscard]] std::uint32_t on_reserve_empty(const std::uint32_t minimum_capacity, const std::uint32_t recommended_capacity) noexcept
     {
         (void)minimum_capacity;
@@ -325,8 +450,10 @@ private:
     inline [[nodiscard]] bool lock(const LockState lock, const bool allow_null = false) const noexcept;
     inline void unlock(const LockState unlock) const noexcept;
 
-    //  Private lock protected virtual call wrappers.
-    //  safe_on_visit() computes identifier internally from the visited category.
+    //  Private guarded virtual-call helpers.
+    //  safe_on_visit() computes identifier from the visited slot category.
+    //  safe_on_visit() and safe_on_move_payload() are available single-call wrappers.
+    //  Batched dispatch is usually preferable.
     void safe_on_visit(const std::int32_t slot_index) noexcept;
     void safe_on_visit_dispatcher(const bool visit_loose, const bool visit_empty) noexcept;
     void safe_on_move_payload(const std::int32_t source_index, const std::int32_t target_index) noexcept;
@@ -345,7 +472,7 @@ private:
     };
 
     struct Slot
-    {   //  Slot meta data structure
+    {   //  Slot metadata structure
     private:
         static const std::uint32_t k_mask = static_cast<std::uint32_t>(std::numeric_limits<TIndex>::max());
         static const std::uint32_t k_flag = k_mask + 1u;
@@ -390,51 +517,52 @@ private:
     //  Capacity growth recommendation.
     static inline std::uint32_t apply_growth_policy(const std::uint32_t capacity) noexcept;
 
-    //  Build slot_index -> rank_index table.
-    //  Ranks follow the canonical traversal order:
-    //  - Loose slots next, ranks [0, loose_count()).
-    //  Empty slots have rank -1.
-    void build_rank_index_table(std::int32_t* const out_rank_indices) const noexcept;
-
     //  Integrity check functions.
     static inline bool failed_integrity_check() noexcept;
     [[nodiscard]] bool private_integrity_check() const noexcept;
 
-    //  Dispatcher for batched on-visit calls.
+    //  Dispatch batched on_visit() calls for the selected categories.
+    //  Visits loose first, then empty, preserving list order within each category.
     void private_on_visit_dispatcher(const bool visit_loose, const bool visit_empty) noexcept;
 
-    //  Resize the array capacity and apply any resulting required cleanup.
+    //  Resize implementation after precondition validation.
     [[nodiscard]] bool private_resize(const std::uint32_t requested_capacity) noexcept;
 
-    //  Acquire an empty slot.
-    //  Optionally reserve space to acquire the requested slot.
-    //  If slot_index is -1, acquires the first slot from the empty list.
-    //  Returns the acquired slot index, or -1 on failure.
+    //  Acquire implementation with optional reservation.
     [[nodiscard]] std::int32_t private_acquire(const std::int32_t slot_index, const bool allow_reserve) noexcept;
 
     //  Implementation of pack().
-    //  See the pack() function prefix comments for details.
+    //
+    //  Compacts loose payload into the lowest slot indices and then rebuilds
+    //  loose and empty metadata in ascending slot index order.
+    //
+    //  on_move_payload(source_index, target_index) is called only for loose
+    //  slots outside the compacted prefix.
+    //
+    //  Empty-slot payload is not preserved unless the derived class preserves
+    //  it inside on_move_payload().
     void private_compact() noexcept;
 
-    //  Scan the inclusive range of slot indices and create a a bi-directional index ordered list of the specified category members.
+    //  Scan an inclusive slot-index range and build a bi-directional list of slots
+    //  in the specified category.
     //  The caller is responsible for correcting any orphaned list members.
-    //  Returns the index of the list head.
+    //  Returns the list head, or -1 if no matching slots are found.
     [[nodiscard]] std::int32_t state_to_list(const std::int32_t lower_index, const std::int32_t upper_index, const SlotState state) noexcept;
 
-    //  Convert an inclusive range of slot indices to a bi-directional list.
-    //  The caller must ensure these slots are not currently actively managed.
-    //  Returns the index of the list head.
+    //  Convert an inclusive slot-index range to a bi-directional list.
+    //  The caller must ensure these slots are not currently managed.
+    //  Returns the list head, or -1 if the range is empty or invalid.
     [[nodiscard]] std::int32_t range_to_list(const std::int32_t lower_index, const std::int32_t upper_index, const SlotState state) noexcept;
 
-    //  Combine bi-directional lists by inserting list 2 at the end of list 1.
-    //  Returns the index of the list head.
+    //  Concatenate two bi-directional lists by appending list2 to list1.
+    //  Returns the head of the combined list.
     [[nodiscard]] std::int32_t combine_lists(const std::int32_t list1_head_index, const std::int32_t list2_head_index) noexcept;
 
-    //  Set the prev_index of slots in a list to be an ordinal index
+    //  Set prev_index for each slot in the list to an ordinal value.
     void set_list_ordinals(const std::int32_t list_index, const std::uint32_t list_count, const std::int32_t ordinal_start) noexcept;
 
-    //  Append a range of slot indices to the loose or empty list.
-    //  The caller must ensure these slots are not currently actively managed.
+    //  Append a slot-index range to the loose or empty list.
+    //  The caller must ensure these slots are not currently managed.
     void append_range_to_loose_list(const std::int32_t lower_index, const std::int32_t upper_index) noexcept;
     void append_range_to_empty_list(const std::int32_t lower_index, const std::int32_t upper_index) noexcept;
 
@@ -444,20 +572,23 @@ private:
     void remove_from_loose(const std::int32_t slot_index) noexcept;
     void remove_from_empty(const std::int32_t slot_index) noexcept;
 
-    //  Move a meta slot to a new meta category if not already a member of it.
+    //  Move a slot to the specified metadata category if not already a member.
     void move_to_loose_list(const std::int32_t slot_index) noexcept;
     void move_to_empty_list(const std::int32_t slot_index) noexcept;
 
-    //  Convert a slot index to its rank index.
-    //  Returns the rank index for lexed and loose slots, or -1 if the slot is empty.
+    //  Convert a slot index to occupied-domain rank.
+    //
+    //  Rank is defined by ascending slot index over loose slots only.
+    //  Returns -1 if the slot is not loose.
     [[nodiscard]] std::int32_t convert_to_rank_index(const std::int32_t slot_index) const noexcept;
 
-    //  Locate a slot index by its rank index.
-    //  Returns the slot index or -1 if rank_index out of range.
-    //  Valid ranks are in [0, lexed_count() + loose_count()).
+    //  Locate a loose slot by occupied-domain rank.
+    //
+    //  Valid rank domain is [0, loose_count()).
+    //  Returns the corresponding slot index, or -1 if rank_index is out of range.
     [[nodiscard]] std::int32_t locate_by_rank_index(const std::int32_t rank_index) const noexcept;
 
-    //  Scan for lowest/highest occupied slot index in the slot metadata array.
+    //  Scan for the lowest/highest non-empty slot index in the metadata array.
     [[nodiscard]] std::int32_t min_occupied_index() const noexcept;
     [[nodiscard]] std::int32_t max_occupied_index() const noexcept;
 
@@ -477,7 +608,7 @@ private:
     std::uint32_t m_empty_count = 0u;           //  count of slots in the empty list
     std::int32_t  m_loose_list_head = -1;       //  index of the loose slot list head (or -1)
     std::int32_t  m_empty_list_head = -1;       //  index of the empty slot list head (or -1)
-    Slot*         m_meta_slot_array = nullptr;  //  slot meta data array
+    Slot*         m_meta_slot_array = nullptr;  //  slot metadata array
 
     //  Private lock state.
     mutable LockState m_lock = LockState::none;
@@ -506,7 +637,7 @@ private:
 
     //  Enforce the only supported type pairs
     static_assert(std::is_same_v<TIndex, std::int32_t> || std::is_same_v<TIndex, std::int16_t>,
-        "TUnorderedSlots: Supported type are std::int32_t and std::int16_t.");
+        "TUnorderedSlots: Supported types are std::int32_t and std::int16_t.");
 
 };
 
@@ -699,19 +830,21 @@ inline bool TUnorderedSlots<TIndex>::erase(const std::int32_t slot_index) noexce
 }
 
 template<typename TIndex>
+inline bool TUnorderedSlots<TIndex>::is_safe_slot(const std::int32_t slot_index) const noexcept
+{
+    return is_safe() && (static_cast<std::uint32_t>(slot_index) < m_capacity);
+}
+
+template<typename TIndex>
 inline bool TUnorderedSlots<TIndex>::is_loose_slot(const std::int32_t slot_index) const noexcept
 {
-    return is_safe()
-        && (static_cast<std::uint32_t>(slot_index) < m_capacity)
-        && m_meta_slot_array[slot_index].is_loose_slot();
+    return is_safe_slot(slot_index) && m_meta_slot_array[slot_index].is_loose_slot();
 }
 
 template<typename TIndex>
 inline bool TUnorderedSlots<TIndex>::is_empty_slot(const std::int32_t slot_index) const noexcept
 {
-    return is_safe()
-        && (static_cast<std::uint32_t>(slot_index) < m_capacity)
-        && m_meta_slot_array[slot_index].is_empty_slot();
+    return is_safe_slot(slot_index) && m_meta_slot_array[slot_index].is_empty_slot();
 }
 
 template<typename TIndex>
@@ -736,6 +869,36 @@ template<typename TIndex>
 inline std::int32_t TUnorderedSlots<TIndex>::next_loose(const std::int32_t slot_index) const noexcept
 {
     return is_loose_slot(slot_index) ? m_meta_slot_array[slot_index].get_next_index() : -1;
+}
+
+template<typename TIndex>
+[[nodiscard]] RankMap TUnorderedSlots<TIndex>::build_rank_map() const noexcept
+{
+    RankMap rank_map;
+    if (is_safe() && (m_capacity != 0u))
+    {
+        if (rank_map.allocate(static_cast<std::size_t>(m_capacity)))
+        {
+            (void)rank_map.set_size(static_cast<std::size_t>(m_capacity));
+            RankMapEntry* const map = rank_map.data();
+            std::fill_n(map, rank_map.size(), RankMapEntry{});
+            const Slot* const meta = m_meta_slot_array;
+            std::int32_t rank_index = 0;
+            std::int32_t slot_index = 0;
+            for (std::uint32_t count = static_cast<std::uint32_t>(m_high_index) + 1u; count != 0; --count)
+            {
+                if (meta[slot_index].is_loose_slot())
+                {
+                    map[rank_index].rank_to_slot = slot_index;
+                    map[slot_index].slot_to_rank = rank_index;
+                    ++rank_index;
+                }
+                ++slot_index;
+            }
+            MV_HARD_ASSERT(rank_index == static_cast<std::int32_t>(m_loose_count));
+        }
+    }
+    return rank_map;
 }
 
 template<typename TIndex>
@@ -769,34 +932,9 @@ inline void TUnorderedSlots<TIndex>::rebuild_empty_in_index_order() noexcept
 }
 
 template<typename TIndex>
-inline TPodVector<std::int32_t> TUnorderedSlots<TIndex>::build_rank_indices() const noexcept
-{
-    TPodVector<std::int32_t> rank_indices;
-    if (is_safe())
-    {
-        if (rank_indices.allocate(static_cast<std::size_t>(m_capacity)))
-        {
-            build_rank_index_table(rank_indices.data());
-        }
-    }
-    return rank_indices;
-}
-
-template<typename TIndex>
-inline bool TUnorderedSlots<TIndex>::build_rank_indices(std::int32_t* const out_rank_indices) const noexcept
-{
-    if (is_safe() && (out_rank_indices != nullptr))
-    {
-        build_rank_index_table(out_rank_indices);
-        return true;
-    }
-    return false;
-}
-
-template<typename TIndex>
 inline std::int32_t TUnorderedSlots<TIndex>::rank_index_of(const std::int32_t slot_index) const noexcept
 {
-    return is_safe() ? convert_to_rank_index(slot_index) : -1;
+    return is_safe_slot(slot_index) ? convert_to_rank_index(slot_index) : -1;
 }
 
 template<typename TIndex>
@@ -924,27 +1062,6 @@ template<typename TIndex>
 inline std::uint32_t TUnorderedSlots<TIndex>::apply_growth_policy(const std::uint32_t capacity) noexcept
 {
     return static_cast<std::uint32_t>(std::min(memory::vector_growth_policy(static_cast<std::size_t>(capacity)), static_cast<std::size_t>(k_capacity_limit)));
-}
-
-//  Build slot_index -> rank_index mapping.
-template<typename TIndex>
-inline void TUnorderedSlots<TIndex>::build_rank_index_table(std::int32_t* const out_rank_indices) const noexcept
-{
-    std::fill_n(out_rank_indices, m_capacity, -1);
-    if (m_loose_count != 0)
-    {
-        std::int32_t rank_index = 0;
-        std::int32_t scan_index = 0;
-        for (std::uint32_t count = static_cast<std::uint32_t>(m_high_index) + 1u; count != 0; --count)
-        {
-            if (m_meta_slot_array[scan_index].is_loose_slot())
-            {
-                out_rank_indices[scan_index] = rank_index;
-                ++rank_index;
-            }
-            ++scan_index;
-        }
-    }
 }
 
 //  This function only exists as a debug convenience to help capture integrity check failure causes.
@@ -1595,5 +1712,7 @@ inline void TUnorderedSlots<TIndex>::set_empty() noexcept
 
 using CUnorderedSlots_int16 = TUnorderedSlots<std::int16_t>;
 using CUnorderedSlots_int32 = TUnorderedSlots<std::int32_t>;
+
+}   //  namespace slots
 
 #endif  //  TUNORDERED_SLOTS_HPP_INCLUDED

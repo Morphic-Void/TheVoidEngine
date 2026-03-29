@@ -204,17 +204,13 @@
 #include <limits>       //  std::numeric_limits
 #include <type_traits>  //  std::is_trivially_copyable_v, std::is_signed_v, std::is_same_v
 
-#include "TPodVector.hpp"
+#include "SlotsRankMap.hpp"
 #include "memory/memory_allocation.hpp"
+#include "memory/memory_primitives.hpp"
 #include "debug/debug.hpp"
 
-struct RankMapEntry
+namespace slots
 {
-    std::int32_t rank_to_slot;
-    std::int32_t slot_to_rank;
-};
-
-using RankMap = TPodVector<RankMapEntry>;
 
 /// An ordered index over slot metadata for externally stored payload items.
 ///
@@ -307,6 +303,7 @@ protected:
 
     //  Slot categorisation functions.
     [[nodiscard]] bool is_occupied(const std::int32_t slot_index) const noexcept;
+    [[nodiscard]] bool is_safe_slot(const std::int32_t slot_index) const noexcept;
     [[nodiscard]] bool is_lexed_slot(const std::int32_t slot_index) const noexcept;
     [[nodiscard]] bool is_loose_slot(const std::int32_t slot_index) const noexcept;
     [[nodiscard]] bool is_empty_slot(const std::int32_t slot_index) const noexcept;
@@ -500,7 +497,11 @@ private:
     inline [[nodiscard]] bool lock(const LockState lock, const bool allow_null = false) const noexcept;
     inline void unlock(const LockState unlock) const noexcept;
 
-    //  Private lock protected virtual call wrappers.
+    //  Private guarded virtual-call helpers.
+    //  safe_on_visit() computes identifier from the visited slot category.
+    //  safe_on_move_payload() is an available guarded wrapper but is not used by pack().
+    //  Neither safe_on_visit() or safe_on_move_payload() are currently used, they are
+    //  provided for symmetry and convenience only. Batched access is usually preferable.
     void safe_on_visit(const std::int32_t slot_index, const std::int32_t rank_index) noexcept;
     void safe_on_visit_dispatcher(const bool visit_lexed, const bool visit_loose, const bool visit_empty) noexcept;
     void safe_on_move_payload(const std::int32_t source_index, const std::int32_t target_index) noexcept;
@@ -955,33 +956,31 @@ inline bool TOrderedSlots<TIndex, TMeta>::erase(const std::int32_t slot_index) n
 template<typename TIndex, typename TMeta>
 inline bool TOrderedSlots<TIndex, TMeta>::is_occupied(const std::int32_t slot_index) const noexcept
 {
-    return is_safe()
-        && (static_cast<std::uint32_t>(slot_index) < m_capacity)
-        && m_meta_slot_array[slot_index].is_occupied();
+    return is_safe_slot(slot_index) && m_meta_slot_array[slot_index].is_occupied();
+}
+
+template<typename TIndex, typename TMeta>
+inline bool TOrderedSlots<TIndex, TMeta>::is_safe_slot(const std::int32_t slot_index) const noexcept
+{
+    return is_safe() && (static_cast<std::uint32_t>(slot_index) < m_capacity);
 }
 
 template<typename TIndex, typename TMeta>
 inline bool TOrderedSlots<TIndex, TMeta>::is_lexed_slot(const std::int32_t slot_index) const noexcept
 {
-    return is_safe()
-        && (static_cast<std::uint32_t>(slot_index) < m_capacity)
-        && m_meta_slot_array[slot_index].is_lexed_slot();
+    return is_safe_slot(slot_index) && m_meta_slot_array[slot_index].is_lexed_slot();
 }
 
 template<typename TIndex, typename TMeta>
 inline bool TOrderedSlots<TIndex, TMeta>::is_loose_slot(const std::int32_t slot_index) const noexcept
 {
-    return is_safe()
-        && (static_cast<std::uint32_t>(slot_index) < m_capacity)
-        && m_meta_slot_array[slot_index].is_loose_slot();
+    return is_safe_slot(slot_index) && m_meta_slot_array[slot_index].is_loose_slot();
 }
 
 template<typename TIndex, typename TMeta>
 inline bool TOrderedSlots<TIndex, TMeta>::is_empty_slot(const std::int32_t slot_index) const noexcept
 {
-    return is_safe()
-        && (static_cast<std::uint32_t>(slot_index) < m_capacity)
-        && m_meta_slot_array[slot_index].is_empty_slot();
+    return is_safe_slot(slot_index) && m_meta_slot_array[slot_index].is_empty_slot();
 }
 
 template<typename TIndex, typename TMeta>
@@ -1256,7 +1255,7 @@ inline void TOrderedSlots<TIndex, TMeta>::rebuild_empty_in_index_order() noexcep
 template<typename TIndex, typename TMeta>
 inline std::int32_t TOrderedSlots<TIndex, TMeta>::rank_index_of(const std::int32_t slot_index) const noexcept
 {
-    return is_safe() ? convert_to_rank_index(slot_index) : -1;
+    return is_safe_slot(slot_index) ? convert_to_rank_index(slot_index) : -1;
 }
 
 template<typename TIndex, typename TMeta>
@@ -3441,5 +3440,7 @@ inline void TOrderedSlots<TIndex, TMeta>::set_empty() noexcept
 
 using COrderedSlots_int16 = TOrderedSlots<std::int16_t, std::int8_t>;
 using COrderedSlots_int32 = TOrderedSlots<std::int32_t, std::int16_t>;
+
+}   //  namespace slots
 
 #endif  //  TORDERED_SLOTS_HPP_INCLUDED

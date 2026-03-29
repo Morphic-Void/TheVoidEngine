@@ -4,104 +4,145 @@ License: MIT (see LICENSE file in repository root)
 
 # TUnorderedSlots<TIndex>
 
-## Purpose
+## Overview
 
-TUnorderedSlots<TIndex> maintains an unordered index over slot
-indices.
+TUnorderedSlots<TIndex> maintains an unordered index over slot indices.
 
-It stores metadata only (list links, slot state, and counts) and
-does not store or access payload.
+The template stores metadata only (list links, slot state, and counts)
+and does not store or access payload.
 
-This template is intended as a base class, not a concrete
-container. The derived class:
+This template is intended as a base class, not a concrete container.
+The derived class:
 
-- Owns payload storage
-- Implements payload movement
-- Controls capacity approval
-- Exposes the public API
+- owns payload storage
+- implements payload movement
+- controls capacity approval
+- exposes the public API
 
 Single-threaded.
 
 ---
 
-## Interface Model
+## Scope
 
-The interface is almost entirely protected.
-
-- Protected functions form the derived-facing API.
-- The derived class defines the public interface.
-- The base acts as an internal metadata engine.
+- Metadata only; no payload ownership
+- No payload construction or destruction
+- Payload movement semantics are defined by the derived class
 
 ---
 
-## Structural Model
+## State model
 
-Each slot is in exactly one state:
+Each slot is in exactly one steady-state category:
 
-- loose      - occupied
-- empty      - available for acquisition
-- unassigned - internal transitional state
-- terminator - internal sentinel state
+- loose  - occupied, identity-bearing
+- empty  - available free space
+
+Internal states:
+
+- unassigned - transitional only
+- terminator - internal sentinel
 
 Structures:
 
 - Loose  -> circular doubly-linked list
 - Empty  -> circular doubly-linked list
 
-No overlap between categories.
-
 Stable-state invariant:
 
     loose_count() + empty_count() == capacity()
 
+No overlap between categories.
+
 ---
 
-## Slot Index
+## Slot index
 
 A slot index is a signed integer in:
 
     [0, capacity())
 
-It addresses metadata in the base and payload in the derived
-class.
+It addresses metadata in the base and payload in the derived class.
 
 Slot indices are stable except during pack().
 
-### Sentinel Conventions
+### Sentinel conventions
 
-- -1 is never a valid slot index.
-- -1 may be returned as a failure sentinel.
-- Slot index and visit identifiers are separate domains.
+- -1 is never a valid slot index
+- -1 may be returned as a failure sentinel
 
-Visit identifiers are used only for on_visit() dispatch:
+Visit identifiers are a separate domain used only for on_visit():
 
 - loose slots use identifier -1
 - empty slots use identifier -2
 
 ---
 
-## Ownership Boundary
+## Ownership boundary
 
 Base owns:
 
-- Slot metadata
-- Structural bookkeeping
-- Slot lifecycle and categorisation
+- slot metadata
+- structural bookkeeping
+- slot lifecycle and categorisation
 
 Derived owns:
 
-- Payload storage and lifetime
-- Payload relocation
-- Capacity policy
-- Public API
+- payload storage and lifetime
+- payload relocation
+- capacity policy
+- public API
 
 The base never inspects payload.
 
 ---
 
-## Virtual Callbacks
+## Observation model
 
-The derived class provides the following overrides:
+### Traversal order
+
+Traversal order is defined strictly by list order.
+
+- Traversal order does not define rank
+- No rank information is implied during traversal
+
+### Rank
+
+Rank is defined over loose slots only (occupied-domain).
+
+    rank(slot_index) == number of loose slots with lower slot index
+
+Properties:
+
+- Valid rank domain: [0, loose_count())
+- Empty slots have no rank and return -1
+- Rank is independent of traversal order
+
+---
+
+## Pack model
+
+pack() performs compaction of loose slots only.
+
+After completion:
+
+- Loose payload occupies slot indices [0, loose_count())
+- Remaining slots are empty
+- Loose and empty lists are rebuilt in ascending slot index order
+
+Non-goals:
+
+- Does not preserve empty-slot payload
+- Does not define or modify rank semantics
+- Does not provide full-domain remapping
+
+Only loose slots are identity-bearing. Empty slots are free space only.
+
+---
+
+## Virtual callbacks
+
+The derived class provides:
 
 - on_visit(slot_index, identifier)
 - on_move_payload(source_index, target_index)
@@ -109,115 +150,109 @@ The derived class provides the following overrides:
 
 ### on_visit
 
-Called during visit operations with slot_index and identifier.
+Called during visit operations.
 
-Identifier values used by this template:
+Identifier values:
 
-- (-1) for loose slots
-- (-2) for empty slots
+- -1 for loose slots
+- -2 for empty slots
 
 ### on_move_payload
 
-Moves payload between slot indices.
+Moves payload during coordinated compaction (pack()).
 
-Contract:
+TUnorderedSlots contract:
 
 - source_index != target_index
-- Exactly one of source_index or target_index may be -1
-- -1 denotes temporary storage owned by the derived class
-- Both are never -1
+- source_index and target_index are non-negative
+- source_index references a loose slot
+- target_index is in [0, loose_count())
+- target_index may overwrite empty-slot payload
 
-Only called by pack().
+Empty-slot payload preservation is not required.
+
+The derived class must implement its own overwrite-safe behaviour if preservation is required.
+A preserving implementation may use swap-like movement, but the template guarantees compaction only.
+
+Migration note:
+
+- TOrderedSlots may use -1 to denote temporary storage
+- TUnorderedSlots does not use -1 here
+- Code written for TOrderedSlots is usually safe here
+- Code written only for TUnorderedSlots may be incorrect in TOrderedSlots
 
 ### on_reserve_empty
 
 Handshake for capacity growth.
 
-The base supplies:
+Inputs:
 
-- minimum_capacity, which must be satisfied
-- recommended_capacity, a growth heuristic
+- minimum_capacity (must be satisfied)
+- recommended_capacity (growth heuristic)
 
-The derived class returns the capacity to apply after ensuring
-payload storage is ready. Returning a value less than
-minimum_capacity causes the caller to fail.
+The derived class returns the capacity to apply after ensuring payload storage is ready.
+
+Returning a value less than minimum_capacity causes failure.
 
 ---
 
-## Re-Entry Guard
+## Re-entry guard
 
 Structural re-entry during virtual callbacks is prohibited.
 
-Only a restricted set of protected accessors is safe inside
-callbacks. All other protected functions are unsafe.
+Only a restricted set of protected accessors is safe inside callbacks.
+All other protected functions are unsafe.
 
 Enforcement:
 
-- Debug builds hard fail.
-- Release builds soft fail by returning false or -1 without
-  mutation.
+- Debug builds hard fail
+- Release builds soft fail (return false or -1, no mutation)
+
+Integrity checks are valid only in stable state.
 
 No thread safety is provided.
 
-Integrity checks are valid only in stable state, not during
-mutation or callback dispatch.
-
 ---
 
-## Internal Layering Model
+## Internal layering model
 
-Three internal layers:
+Three layers:
 
 Protected interface:
 
-- Derived-facing entry points
-- Validate state
-- Establish and release guard state
+- validates state
+- establishes and releases guard state
 
 safe_* wrappers:
 
-- Acquire and release the guard around virtual dispatch
+- perform guarded virtual dispatch
 
 private_* helpers:
 
-- Core mutation and traversal logic
-- Assume validated preconditions
-- Do not acquire locks directly
-- May invoke callbacks only via safe_* wrappers
+- core mutation and traversal logic
+- assume validated preconditions
+- do not acquire locks directly
+- invoke callbacks only via safe_* wrappers
 
-This structure permits batched mutation under a single guard and
-avoids nested locking.
+This allows batched mutation under a single guard.
 
 ---
 
-## Mutation Model
+## Mutation model
 
-Structural mutation operations:
+Structural mutation:
 
 - pack()
 
 During mutation:
 
-- Structure may be temporarily inconsistent.
-- Integrity checks are valid only after completion.
-- Execution occurs under a single guard.
-
-### pack()
-
-Physically reorders payload and rebuilds metadata.
-
-After completion:
-
-- Loose payload occupies slot indices [0, loose_count()).
-- Remaining slots are empty in [loose_count(), capacity()).
-
-Reordering uses on_move_payload() and may use temporary -1 moves.
-The specific move sequence is an internal implementation detail.
-The derived class must support the on_move_payload() contract.
+- structure may be temporarily inconsistent
+- integrity checks are valid only after completion
+- execution occurs under a single guard
 
 ---
 
-## Capacity Model
+## Capacity model
 
 Definitions:
 
@@ -226,8 +261,7 @@ Definitions:
 - index_limit()
 - capacity_limit() == index_limit() + 1
 
-minimum_safe_capacity() may be transiently inconsistent during
-mutation but is corrected before stable state.
+minimum_safe_capacity() may be transiently inconsistent during mutation.
 
 Operations:
 
@@ -236,10 +270,10 @@ Operations:
 - reserve_and_acquire(...)
 - shrink_to_fit()
 
-Non-destructive guarantees:
+Guarantees:
 
 - safe_resize() fails if new_capacity < high_index() + 1
-- reserve_empty() and reserve_and_acquire() do not invalidate occupied slots
+- reserve operations do not invalidate occupied slots
 - shrink_to_fit() is equivalent to safe_resize(high_index() + 1)
 
 No automatic shrinking or compaction is performed.
@@ -254,15 +288,14 @@ Destructive:
 - shutdown()
 - clear()
 
-clear() resets metadata and rebuilds the empty list without
-deallocation.
+clear() resets metadata and rebuilds the empty list without deallocation.
 
 Non-destructive:
 
-Capacity management:
+Capacity:
 
-- safe_resize(new_capacity)
-- reserve_empty(slot_count)
+- safe_resize(...)
+- reserve_empty(...)
 - reserve_and_acquire(...)
 - shrink_to_fit()
 
@@ -271,14 +304,14 @@ Slot operations:
 - acquire(...)
 - erase(slot_index)
 
-erase() returns an occupied slot to the empty list. The derived
-class is responsible for handling or discarding payload.
+erase() returns a loose slot to the empty list. Payload handling is
+the responsibility of the derived class.
 
 ---
 
-## Visit Operations
+## Visit operations
 
-Visits may include one or more categories.
+Visits operate over one or more categories.
 
 Each visited slot calls:
 
@@ -291,7 +324,7 @@ Identifier values:
 
 ---
 
-## Invariants (Stable State)
+## Invariants (stable state)
 
 - Each slot is in exactly one category
 - Category counts sum to capacity()
@@ -299,25 +332,63 @@ Identifier values:
 - high_index() is the highest occupied index or -1
 - peak_usage() and peak_index() are monotonic maxima
 
-Integrity checks assume no active mutation.
-
 ---
 
 ## Complexity
 
-- Acquire and erase: O(1)
-- List operations: O(1)
+- acquire / erase: O(1)
+- list operations: O(1)
 - pack(): O(n)
 - check_integrity(): O(n)
 
 ---
 
-## Out of Scope
+## Alignment with TOrderedSlots
+
+TOrderedSlots and TUnorderedSlots define rank differently.
+
+TOrderedSlots:
+
+- rank is full-domain
+- occupied and empty slots participate in remapping
+- pack()/sort_and_pack() perform total reordering
+
+TUnorderedSlots:
+
+- rank is occupied-domain only
+- empty slots have no rank and no identity
+- pack() performs compaction only
+
+Migration constraints:
+
+- Do not assume empty-slot payload preservation
+- Do not assume empty-slot remapping
+- Do not assume full-domain rank behaviour
+- Do not assume shared callback contracts are identical
+
+---
+
+## Type constraints
+
+Supported types:
+
+- std::int32_t
+- std::int16_t
+
+TIndex must be signed.
+
+Slot metadata representation is constrained for compact flag/index encoding.
+
+Slot must be trivially copyable.
+
+---
+
+## Out of scope
 
 The template does not:
 
-- Provide thread safety
-- Manage payload memory
-- Provide ordering or key comparison
-- Validate on_move_payload correctness
-- Auto-shrink without explicit calls
+- provide thread safety
+- manage payload memory
+- provide ordering or key comparison
+- validate on_move_payload correctness
+- auto-shrink without explicit calls

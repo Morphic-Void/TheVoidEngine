@@ -114,6 +114,9 @@
     <ClInclude Include="include\containers\TStableStorage.hpp">
       <Filter>include\containers</Filter>
     </ClInclude>
+    <ClInclude Include="include\containers\SlotsRankMap.hpp">
+      <Filter>include\containers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\io\file\file.cpp">
