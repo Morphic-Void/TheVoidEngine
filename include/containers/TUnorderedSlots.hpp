@@ -558,9 +558,6 @@ private:
     //  Returns the head of the combined list.
     [[nodiscard]] std::int32_t combine_lists(const std::int32_t list1_head_index, const std::int32_t list2_head_index) noexcept;
 
-    //  Set prev_index for each slot in the list to an ordinal value.
-    void set_list_ordinals(const std::int32_t list_index, const std::uint32_t list_count, const std::int32_t ordinal_start) noexcept;
-
     //  Append a slot-index range to the loose or empty list.
     //  The caller must ensure these slots are not currently managed.
     void append_range_to_loose_list(const std::int32_t lower_index, const std::int32_t upper_index) noexcept;
@@ -1454,21 +1451,6 @@ inline std::int32_t TUnorderedSlots<TIndex>::combine_lists(const std::int32_t li
         m_meta_slot_array[list2_tail_index].set_next_index(list1_head_index);
     }
     return list1_head_index;
-}
-
-//  Set the prev_index of slots in a list to be an ordinal index
-template<typename TIndex>
-inline void TUnorderedSlots<TIndex>::set_list_ordinals(const std::int32_t list_index, const std::uint32_t list_count, const std::int32_t ordinal_start) noexcept
-{
-    std::int32_t ordinal_index = ordinal_start;
-    std::int32_t slot_index = list_index;
-    for (std::uint32_t slot_count = list_count; slot_count > 0; --slot_count)
-    {
-        Slot& slot = m_meta_slot_array[slot_index];
-        slot.set_prev_index(ordinal_index);
-        slot_index = slot.get_next_index();
-        ++ordinal_index;
-    }
 }
 
 template<typename TIndex>
