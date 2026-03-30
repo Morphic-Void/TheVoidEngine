@@ -30,7 +30,7 @@
 #include <sstream>
 #include <string>
 
-#include "containers/TUnorderedSlots.hpp"
+#include "containers/slots/TUnorderedSlots.hpp"
 #include "tests/TUnorderedSlots_test_harness.hpp"
 
 #ifndef TUNORDERED_TESTHARNESS_WITH_MAIN

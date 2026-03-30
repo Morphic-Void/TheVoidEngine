@@ -181,7 +181,7 @@ inline bool TStableStorage<T>::is_valid() const noexcept
         ((m_slot_mask & slots_per_buffer) == 0u) &&
         ((slots_per_buffer >> m_buffer_shift) == 1u) &&
         bit_ops::is_pow2(m_buffer_capacity) &&
-        memory::in_non_zero_range(m_buffer_capacity, (k_max_elements / slots_per_buffer)) &&
+        memory::in_non_empty_range(m_buffer_capacity, (k_max_elements / slots_per_buffer)) &&
         ((m_slot_capacity & m_slot_mask) == 0u) &&
         ((m_slot_capacity >> m_buffer_shift) <= m_buffer_capacity))
     {   //  core invariants hold, now check the buffer pointers

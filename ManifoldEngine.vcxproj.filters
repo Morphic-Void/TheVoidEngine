@@ -55,15 +55,12 @@
     <Filter Include="include\tests">
       <UniqueIdentifier>{3d214a38-6cda-4650-a14a-8effe230b742}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\containers\slots">
+      <UniqueIdentifier>{801217ca-876b-424e-b9ed-2d756058e2e7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\containers\ByteBuffers.hpp">
-      <Filter>include\containers</Filter>
-    </ClInclude>
-    <ClInclude Include="include\containers\TOrderedSlots.hpp">
-      <Filter>include\containers</Filter>
-    </ClInclude>
-    <ClInclude Include="include\containers\TUnorderedSlots.hpp">
       <Filter>include\containers</Filter>
     </ClInclude>
     <ClInclude Include="include\io\file\file.hpp">
@@ -114,8 +111,14 @@
     <ClInclude Include="include\containers\TStableStorage.hpp">
       <Filter>include\containers</Filter>
     </ClInclude>
-    <ClInclude Include="include\containers\SlotsRankMap.hpp">
-      <Filter>include\containers</Filter>
+    <ClInclude Include="include\containers\slots\SlotsRankMap.hpp">
+      <Filter>include\containers\slots</Filter>
+    </ClInclude>
+    <ClInclude Include="include\containers\slots\TOrderedSlots.hpp">
+      <Filter>include\containers\slots</Filter>
+    </ClInclude>
+    <ClInclude Include="include\containers\slots\TUnorderedSlots.hpp">
+      <Filter>include\containers\slots</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

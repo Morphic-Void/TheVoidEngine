@@ -161,12 +161,12 @@
     <ClInclude Include="include\bit_utils\bit_utils.hpp" />
     <ClInclude Include="include\bit_utils\spatial_codes.hpp" />
     <ClInclude Include="include\containers\ByteBuffers.hpp" />
-    <ClInclude Include="include\containers\SlotsRankMap.hpp" />
+    <ClInclude Include="include\containers\slots\SlotsRankMap.hpp" />
+    <ClInclude Include="include\containers\slots\TOrderedSlots.hpp" />
+    <ClInclude Include="include\containers\slots\TUnorderedSlots.hpp" />
     <ClInclude Include="include\containers\StringBuffers.hpp" />
-    <ClInclude Include="include\containers\TOrderedSlots.hpp" />
     <ClInclude Include="include\containers\TPodVector.hpp" />
     <ClInclude Include="include\containers\TStableStorage.hpp" />
-    <ClInclude Include="include\containers\TUnorderedSlots.hpp" />
     <ClInclude Include="include\debug\debug.hpp" />
     <ClInclude Include="include\io\file\file.hpp" />
     <ClInclude Include="include\io\file\internal\file_utils.hpp" />

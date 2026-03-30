@@ -31,7 +31,7 @@
 #include <sstream>
 #include <string>
 
-#include "containers/TOrderedSlots.hpp"
+#include "containers/slots/TOrderedSlots.hpp"
 #include "tests/TOrderedSlots_test_harness.hpp"
 
 #ifndef TORDERED_TESTHARNESS_WITH_MAIN
