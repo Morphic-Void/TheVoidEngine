@@ -76,6 +76,7 @@
 #include "TPodVector.hpp"
 #include "algo/validate_permutations.hpp"
 #include "memory/memory_allocation.hpp"
+#include "memory/memory_primitives.hpp"
 #include "debug/debug.hpp"
 
 //==============================================================================
@@ -123,23 +124,23 @@ public:
     ~CStringView() noexcept = default;
 
     //  Construction
-    explicit CStringView(const char* const cstring) noexcept : m_string(nullptr), m_length(0u) { set(cstring); }
-    explicit CStringView(const std::uint8_t* const string) noexcept : m_string(nullptr), m_length(0u) { set(string); }
-    explicit CStringView(const char* const cstring, const std::size_t length) noexcept : m_string(nullptr), m_length(0u) { set(cstring, length); }
-    explicit CStringView(const std::uint8_t* const string, const std::size_t length) noexcept : m_string(nullptr), m_length(0u) { set(string, length); }
+    explicit CStringView(const char* const cstring) noexcept { set(cstring); }
+    explicit CStringView(const std::uint8_t* const string) noexcept { set(string); }
+    explicit CStringView(const char* const cstring, const std::size_t length) noexcept { set(cstring, length); }
+    explicit CStringView(const std::uint8_t* const string, const std::size_t length) noexcept { set(string, length); }
 
     //  View state
     bool set(const char* const cstring) noexcept { return set(cast_to_string(cstring)); }
-    bool set(const std::uint8_t* const string) noexcept { reset(); if (string != nullptr) { m_string = string; m_length = strz_length(m_string); } return m_string != nullptr; }
+    bool set(const std::uint8_t* const string) noexcept { reset(); if (string != nullptr) { m_string.set(string); m_length = strz_length(m_string.data()); } return m_string.data() != nullptr; }
     bool set(const char* const cstring, const std::size_t length) noexcept { return set(cast_to_string(cstring), length); }
-    bool set(const std::uint8_t* const string, const std::size_t length) noexcept { reset(); if (string != nullptr) { m_string = string; m_length = length; } return m_string != nullptr; }
-    void reset() noexcept { m_string = nullptr; m_length = 0u; }
+    bool set(const std::uint8_t* const string, const std::size_t length) noexcept { reset(); if (string != nullptr) { m_string.set(string); m_length = length; } return m_string.data() != nullptr; }
+    void reset() noexcept { m_string.set(nullptr); m_length = 0u; }
 
     //  Accessors
-    const char* cstring() const noexcept { return cast_to_cstring(m_string); }
-    const std::uint8_t* string() const noexcept { return m_string; }
-    std::size_t length() const noexcept { return (m_string != nullptr) ? m_length : 0u; }
-    bool empty() const noexcept { return (m_string == nullptr); }
+    const char* cstring() const noexcept { return cast_to_cstring(m_string.data()); }
+    const std::uint8_t* string() const noexcept { return m_string.data(); }
+    std::size_t length() const noexcept { return (m_string.data() != nullptr) ? m_length : 0u; }
+    bool empty() const noexcept { return (m_string.data() == nullptr); }
 
     //  Relationship identity
     [[nodiscard]] std::int32_t relationship(const CStringView& other) const noexcept;
@@ -160,7 +161,7 @@ public:
 private:
     std::int32_t private_compare(const CStringView& other) const noexcept;
 
-    const std::uint8_t* m_string = nullptr;
+    memory::TMemoryConstView<std::uint8_t> m_string;
     std::size_t m_length = 0u;
 };
 
@@ -183,14 +184,14 @@ public:
     CSimpleString() noexcept = default;
     CSimpleString(const CSimpleString&) = delete;
     CSimpleString& operator=(const CSimpleString&) = delete;
+    CSimpleString(CSimpleString&& other) noexcept = default;
+    CSimpleString& operator=(CSimpleString&& other) noexcept = default;
 
     //  Move lifetime and construction
-    CSimpleString(CSimpleString&& other) noexcept : m_string(other.m_string), m_length(other.m_length) { other.m_string = nullptr; other.m_length = 0u; }
-    CSimpleString& operator=(CSimpleString&& other) noexcept;
-    explicit CSimpleString(const char* const cstring) noexcept : m_string(nullptr), m_length(0u) { set(cstring); }
-    explicit CSimpleString(const std::uint8_t* const string) noexcept : m_string(nullptr), m_length(0u) { set(string); }
-    explicit CSimpleString(const char* const cstring, const std::size_t length) noexcept : m_string(nullptr), m_length(0u) { set(cstring, length); }
-    explicit CSimpleString(const std::uint8_t* const string, const std::size_t length) noexcept : m_string(nullptr), m_length(0u) { set(string, length); }
+    explicit CSimpleString(const char* const cstring) noexcept { set(cstring); }
+    explicit CSimpleString(const std::uint8_t* const string) noexcept { set(string); }
+    explicit CSimpleString(const char* const cstring, const std::size_t length) noexcept { set(cstring, length); }
+    explicit CSimpleString(const std::uint8_t* const string, const std::size_t length) noexcept { set(string, length); }
     ~CSimpleString() noexcept { deallocate(); }
 
     //  String state
@@ -200,11 +201,11 @@ public:
     bool set(const std::uint8_t* const string, const std::size_t length) noexcept;
 
     //  Accessors
-    [[nodiscard]] CStringView view() const noexcept { return CStringView{ m_string, m_length }; }
+    [[nodiscard]] CStringView view() const noexcept { return CStringView{ m_string.data(), m_length }; }
     [[nodiscard]] const char* cstring() const noexcept { return cast_to_cstring(string()); }
-    [[nodiscard]] const std::uint8_t* string() const noexcept { return m_string; }
-    [[nodiscard]] std::size_t length() const noexcept { return (m_string != nullptr) ? m_length : 0u; }
-    [[nodiscard]] bool is_empty() const noexcept { return (m_string == nullptr); }
+    [[nodiscard]] const std::uint8_t* string() const noexcept { return m_string.data(); }
+    [[nodiscard]] std::size_t length() const noexcept { return (m_string.data() != nullptr) ? m_length : 0u; }
+    [[nodiscard]] bool is_empty() const noexcept { return (m_string.data() == nullptr); }
 
     //  Relationship identity
     [[nodiscard]] std::int32_t relationship(const CStringView& other) const noexcept { return view().relationship(other); }
@@ -228,7 +229,7 @@ public:
 private:
     bool private_allocate(const std::uint8_t* const string, const std::size_t length) noexcept;
 
-    std::uint8_t* m_string = nullptr;
+    memory::TMemoryToken<std::uint8_t> m_string;
     std::size_t m_length = 0u;
 };
 
@@ -431,14 +432,16 @@ private:
 
 [[nodiscard]] inline std::int32_t CStringView::private_compare(const CStringView& other) const noexcept
 {
-    if ((m_string != nullptr) && (other.m_string != nullptr))
+    const std::uint8_t* const a = m_string.data();
+    const std::uint8_t* const b = other.m_string.data();
+    if ((a != nullptr) && (b != nullptr))
     {
         std::size_t count = (m_length <= other.m_length) ? m_length : other.m_length;
         for (std::size_t index = 0; index < count; ++index)
         {
-            if (m_string[index] != other.m_string[index])
+            if (a[index] != b[index])
             {
-                return (m_string[index] > other.m_string[index]) ? 1 : -1;
+                return (a[index] > b[index]) ? 1 : -1;
             }
         }
     }
@@ -448,19 +451,6 @@ private:
 //==============================================================================
 //  CSimpleString out of class function bodies
 //==============================================================================
-
-inline CSimpleString& CSimpleString::operator=(CSimpleString&& other) noexcept
-{
-    if (this != &other)
-    {
-        deallocate();
-        m_string = other.m_string;
-        m_length = other.m_length;
-        other.m_string = nullptr;
-        other.m_length = 0u;
-    }
-    return *this;
-}
 
 inline bool CSimpleString::set(const std::uint8_t* const string) noexcept
 {
@@ -476,11 +466,7 @@ inline bool CSimpleString::set(const std::uint8_t* const string, const std::size
 
 inline void CSimpleString::deallocate() noexcept
 {
-    if (m_string != nullptr)
-    {
-        memory::t_deallocate<std::uint8_t>(m_string);
-        m_string = nullptr;
-    }
+    m_string.deallocate();
     m_length = 0u;
 }
 
@@ -488,11 +474,10 @@ inline bool CSimpleString::private_allocate(const std::uint8_t* const string, co
 {
     if ((string != nullptr) && (length < memory::k_max_elements))
     {
-        m_string = memory::t_allocate<std::uint8_t>(length + 1u);
-        if (m_string != nullptr)
+        if (m_string.allocate(length + 1u))
         {
-            std::memcpy(m_string, string, length);
-            m_string[length] = 0u;
+            std::memcpy(m_string.data(), string, length);
+            m_string.data()[length] = 0u;
             m_length = length;
             return true;
         }
