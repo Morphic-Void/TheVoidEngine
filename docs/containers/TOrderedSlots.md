@@ -243,20 +243,28 @@ strict weak ordering breaks structural correctness.
 
 ### on_move_payload
 
-Moves payload between slot indices.
+Moves derived payload as part of the coordinated remap performed by sort_and_pack().
 
 Only called by sort_and_pack().
 
 Contract:
 
+- sort_and_pack() reorders slot metadata into sorted/packed order
+- on_move_payload() applies the corresponding remap to the derived payload
+- payload movement is coupled to metadata movement and is not a simple copy of the current payload layout
+
 - If use_external_payload is true:
   - source_index may be equal to target_index
   - equal indices do not imply in-place self-assignment
-  - the payload is being copied from the current slot domain to a separate external payload domain
+  - payload is copied from the current slot domain to a separate external payload domain
+  - source_index identifies the source payload position in the pre-remap domain
+  - target_index identifies the target payload position in the sorted/packed destination domain
 
 - If use_external_payload is false:
   - source_index != target_index
   - source_index and target_index refer to positions in the same payload domain
+  - source_index identifies the pre-remap payload position
+  - target_index identifies the corresponding post-remap payload position
 
 - Exactly one of source_index or target_index may be -1
 - -1 denotes temporary storage owned by the derived class
