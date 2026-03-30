@@ -59,6 +59,13 @@ public:
     [[nodiscard]] bool is_empty() const noexcept;
     [[nodiscard]] bool is_ready() const noexcept;
 
+    //  Accessors
+    T* get_object(const std::int32_t slot_index) noexcept;
+    const T* get_object(const std::int32_t slot_index) const noexcept;
+
+    //  Content management
+    bool erase(const std::int32_t slot_index) noexcept;
+
     //  Initialisation and deallocation
     bool initialise(const std::size_t initial_slot_count = 0u, const std::size_t slots_per_buffer = 0u) noexcept;
     void deallocate() noexcept;
@@ -114,6 +121,62 @@ inline bool TUnorderedCollection<T>::is_ready() const noexcept
 }
 
 template<typename T>
+inline T* TUnorderedCollection<T>::get_object(const std::int32_t slot_index) noexcept
+{
+    const std::size_t internal_slot_index = static_cast<std::size_t>(slot_index);
+    if (internal_slot_index < m_slots.size())
+    {
+        const SlotData& slot = m_slots[internal_slot_index];
+        if (slot.state == SlotState::Constructed)
+        {
+            T* const element = m_storage.index_ptr(slot.storage_index);
+            MV_HARD_ASSERT(element != nullptr);
+            return element;
+        }
+    }
+    return nullptr;
+}
+
+template<typename T>
+inline const T* TUnorderedCollection<T>::get_object(const std::int32_t slot_index) const noexcept
+{
+    const std::size_t internal_slot_index = static_cast<std::size_t>(slot_index);
+    if (internal_slot_index < m_slots.size())
+    {
+        const SlotData& slot = m_slots[internal_slot_index];
+        if (slot.state == SlotState::Constructed)
+        {
+            const T* const element = m_storage.index_ptr(slot.storage_index);
+            MV_HARD_ASSERT(element != nullptr);
+            return element;
+        }
+    }
+    return nullptr;
+}
+
+template<typename T>
+inline bool TUnorderedCollection<T>::erase(const std::int32_t slot_index) noexcept
+{
+    const std::size_t internal_slot_index = static_cast<std::size_t>(slot_index);
+    if (internal_slot_index < m_slots.size())
+    {
+        SlotData& slot = m_slots[internal_slot_index];
+        if (slot.state == SlotState::Constructed)
+        {
+            T* const element = m_storage.index_ptr(slot.storage_index);
+            MV_HARD_ASSERT(element != nullptr);
+            if (element != nullptr)
+            {
+                element->~T();
+                slot.state = SlotState::Mapped;
+                return base_class::erase(slot_index);
+            }
+        }
+    }
+    return false;
+}
+
+template<typename T>
 inline bool TUnorderedCollection<T>::initialise(const std::size_t initial_slot_count, const std::size_t slots_per_buffer) noexcept
 {
     deallocate();
@@ -147,7 +210,7 @@ inline void TUnorderedCollection<T>::deallocate() noexcept
 }
 
 template<typename T>
-void TUnorderedCollection<T>::on_move_payload(const std::int32_t source_index, const std::int32_t target_index) noexcept
+inline void TUnorderedCollection<T>::on_move_payload(const std::int32_t source_index, const std::int32_t target_index) noexcept
 {
     SlotData swap = m_slots[target_index];
     m_slots[target_index] = m_slots[source_index];
@@ -155,7 +218,7 @@ void TUnorderedCollection<T>::on_move_payload(const std::int32_t source_index, c
 }
 
 template<typename T>
-std::uint32_t TUnorderedCollection<T>::on_reserve_empty(const std::uint32_t minimum_capacity, const std::uint32_t recommended_capacity) noexcept
+inline std::uint32_t TUnorderedCollection<T>::on_reserve_empty(const std::uint32_t minimum_capacity, const std::uint32_t recommended_capacity) noexcept
 {
     (void)minimum_capacity;
     const std::size_t new_capacity = static_cast<std::size_t>(recommended_capacity);
@@ -180,11 +243,13 @@ inline void TUnorderedCollection<T>::deconstruct_payload() noexcept
         if (slot.state == SlotState::Constructed)
         {
             T* element = m_storage.index_ptr(slot.storage_index);
+            MV_HARD_ASSERT(element != nullptr);
             if (element != nullptr)
             {
                 element->~T();
+                slot.state = SlotState::Mapped;
+                (void)base_class::erase(static_cast<std::int32_t>(slot_index));
             }
-            slot.state = SlotState::Mapped;
         }
     }
 }
