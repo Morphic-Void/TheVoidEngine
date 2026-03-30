@@ -189,17 +189,17 @@ inline bool TStableStorage<T>::is_valid() const noexcept
         const std::size_t used_buffer_count = buffer_count();
         std::size_t buffer_index = 0u;
         while (buffer_index < used_buffer_count)
-        {
+        {   //  check the allocation state of the allocated buffers
             if (buffers[buffer_index].data() == nullptr)
-            {
+            {   //  an allocated buffer is missing allocation
                 return false;
             }
             ++buffer_index;
         }
         while (buffer_index < m_buffer_capacity)
-        {
+        {   //  check the allocation state of the unnallocated buffers
             if (buffers[buffer_index].data() != nullptr)
-            {
+            {   //  an unallocated buffer has allocation
                 return false;
             }
             ++buffer_index;
@@ -219,6 +219,7 @@ template<typename T>
 inline bool TStableStorage<T>::is_ready() const noexcept
 {
     const std::size_t slots_per_buffer = buffer_slots();
+
     return
         (m_buffers.data() != nullptr) &&
         bit_ops::is_pow2(m_buffer_capacity) &&
