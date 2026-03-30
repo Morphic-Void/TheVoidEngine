@@ -147,10 +147,10 @@ inline T* TOrderedCollection<T, TKey>::get_object(const std::int32_t slot_index)
 template<typename T, typename TKey>
 inline const T* TOrderedCollection<T, TKey>::get_object(const std::int32_t slot_index) const noexcept
 {
-    const std::size_t internal_slot_index = static_cast<std::size_t>(slot_index);
-    if (internal_slot_index < m_slots.size())
+    const std::size_t element_index = static_cast<std::size_t>(slot_index);
+    if (element_index < m_slots.size())
     {
-        const SlotData& slot = m_slots[internal_slot_index];
+        const SlotData& slot = m_slots[element_index];
         if (slot.state == SlotState::Constructed)
         {
             const T* const element = m_storage.index_ptr(slot.storage_index);
@@ -164,10 +164,10 @@ inline const T* TOrderedCollection<T, TKey>::get_object(const std::int32_t slot_
 template<typename T, typename TKey>
 inline bool TOrderedCollection<T, TKey>::erase(const std::int32_t slot_index) noexcept
 {
-    const std::size_t internal_slot_index = static_cast<std::size_t>(slot_index);
-    if (internal_slot_index < m_slots.size())
+    const std::size_t element_index = static_cast<std::size_t>(slot_index);
+    if (element_index < m_slots.size())
     {
-        SlotData& slot = m_slots[internal_slot_index];
+        SlotData& slot = m_slots[element_index];
         if (slot.state == SlotState::Constructed)
         {
             T* const element = m_storage.index_ptr(slot.storage_index);
@@ -273,7 +273,7 @@ inline void TOrderedCollection<T, TKey>::deconstruct_payload() noexcept
             {
                 element->~T();
                 slot.state = SlotState::Mapped;
-                (void)base_class::erase(static_cast<std::int32_t>(slot_index));
+                (void)base_class::erase(static_cast<std::int32_t>(element_index));
             }
         }
     }
