@@ -101,7 +101,7 @@ inline void swap(TObjectOwner<T>& lhs, TObjectOwner<T>& rhs) noexcept
 }
 
 template<typename T, typename... TArgs>
-[[nodiscard]] inline TObjectOwner<T> make_object_owner(TArgs&&... args) noexcept
+inline TObjectOwner<T> make_object_owner(TArgs&&... args) noexcept
 {   //  factory
     return TObjectOwner<T>::create(std::forward<TArgs>(args)...);
 }
