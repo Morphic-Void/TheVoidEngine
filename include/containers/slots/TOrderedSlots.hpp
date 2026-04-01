@@ -1,196 +1,36 @@
 
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
-// 
+//
 //  File:   TOrderedSlots.hpp
 //  Author: Ritchie Brannan
 //  Date:   10 Jan 26
 //
-//  TOrderedSlots<TIndex, TMeta>
+//  Requirements:
+//  - Requires C++17 or later.
+//  - No exceptions.
 //
 //  Metadata-only ordering and slot-management toolkit over an
 //  externally owned slot-aligned payload domain.
 //
+//  Does not own payload, keys, or capacity policy.
+//
 //  IMPORTANT TERMINOLOGY NOTE
 //  --------------------------
-//  In this component, "lexed" means ordered by on_compare_keys().
+//  "lexed" means ordered by on_compare_keys().
 //
-//  It does NOT imply:
-//      - string comparison
-//      - text collation
-//      - lexicographic ordering in the narrow textual sense
+//  Ordering is entirely defined by the derived class comparator.
 //
-//  The ordering relation is entirely defined by the derived class.
+//  Traversal order defines rank order.
 //
-//  TOOLKIT ROLE
-//  ------------
-//  TOrderedSlots is a structural toolkit, not a complete container.
-//
-//  It owns and manages slot metadata only:
-//      - AVL tree links (parent_index, child_index[2])
-//      - Balance factors
-//      - Slot state (lexed / loose / empty / unassigned)
-//      - Category counts and high/peak tracking
-//
-//  It does not own:
-//      - payload items
-//      - query keys
-//      - payload movement policy
-//      - external growth policy
-//
-//  A concrete derived class supplies whichever callback behaviour its
-//  intended use actually requires, and may expose only the subset of
-//  inherited functionality that matches its semantics.
-//
-//  Typical derived responsibilities may include:
-//      - key comparison for ordered operations
-//      - payload movement for sort_and_pack()
-//      - visit handling for traversal callbacks
-//      - reserve/growth approval policy
-//
-//  A derived class is not required to expose or use every capability
-//  provided by this toolkit.
-//
-//  ORDERING MODEL
-//  --------------
-//  Occupied slots may exist in one of two occupied categories:
-//
-//      Lexed  - occupied and a member of the ordered AVL subset
-//      Loose  - occupied but not in the ordered subset
-//
-//  Empty slots are available for acquisition.
-//
-//  Ordered traversal and ordered rank are defined by in-order traversal
-//  of the lexed slots, followed by the loose slots and then empty slots.
-//
-//  In TOrderedSlots, TRAVERSAL ORDER DEFINES RANK ORDER.
-//
-//  After sort_and_pack(), traversal order, rank order, and slot index
-//  order are identical within the occupied region.
-//
-//  Do not assume that this behaviour applies to TUnorderedSlots.
-//
-//  ORDER DEFINITION
-//  ----------------
-//  Lexed ordering is defined solely by on_compare_keys().
-//
-//  For equal comparisons (on_compare_keys(a, b) == 0), ordering is
-//  stable by insertion order. Inserting an equal key appends it as the
-//  in-order successor of the last equal key. relex_all() and
-//  sort_and_pack() preserve the existing in-order sequence,
-//  including equal-key runs.
-//
-//  QUERY KEY MODEL
+//  Migration notes
 //  ---------------
-//  Some search and acquisition operations call:
+//  Do not assume occupied-only rank semantics from TUnorderedSlots.
 //
-//      on_compare_keys(-1, target_index)
+//  Rank is full-domain. Ordered, loose, and empty slots all participate
+//  in rank and remapping.
 //
-//  The template does not store the query key. The derived class must
-//  stage the current query or insert key in its own storage before
-//  calling these operations, and keep it valid for the duration of the
-//  call.
-//
-//  SLOT MODEL
-//  ----------
-//  Slot indices are integers in [0, capacity()). Each index addresses
-//  both slot metadata and its corresponding derived payload element or
-//  payload-side record, if any.
-//
-//  STEADY-STATE INVARIANTS
-//  -----------------------
-//  - m_lexed_count + m_loose_count + m_empty_count == m_capacity
-//  - Lexed slots form a valid AVL tree
-//  - Loose and empty slots form circular bi-directional lists
-//  - m_high_index is the highest occupied slot index (or -1 if none)
-//  - m_peak_usage and m_peak_index record historical maxima
-//  - No slot belongs to more than one category
-//
-//  LIFECYCLE
-//  ---------
-//  - initialise(capacity) allocates metadata and marks all slots Empty
-//  - shutdown() releases metadata and resets to uninitialised
-//  - safe_resize()/reserve_empty() adjust capacity subject to invariants
-//  - sort_and_pack() optionally reorders payload-side state and rebuilds
-//    metadata, if that operation is meaningful for the derived class
-//
-//  After sort_and_pack():
-//      - Lexed items occupy slot indices [0, lexed_count()) in order
-//      - Loose items occupy slot indices [lexed_count(), lexed_count() + loose_count())
-//      - Remaining slots are Empty
-//      - The lexed metadata is rebuilt as a balanced AVL tree
-//
-//  CALLBACK OPTIONALITY
-//  --------------------
-//  on_compare_keys():
-//      Required only for ordered operations that depend on key order,
-//      such as lexed acquisition, find/bound queries, duplicate-key
-//      checks, lex/relex operations, and lexical validation.
-//
-//  on_visit():
-//      Required only if visit_*() traversal callbacks are used.
-//
-//  on_move_payload():
-//      Required only if sort_and_pack() is used meaningfully by the
-//      derived class.
-//
-//  on_reserve_empty():
-//      Optional growth approval / adjustment hook.
-//      The default implementation accepts the recommended capacity.
-//
-//  LOCKING AND RE-ENTRY MODEL
-//  --------------------------
-//  The template is strictly single-threaded.
-//
-//  During execution of a virtual callback the template enters a lock
-//  state:
-//
-//      LockState::on_visit
-//      LockState::on_move_payload
-//      LockState::on_reserve_empty
-//      LockState::on_compare_keys
-//
-//  While locked:
-//      - Only explicitly safe accessor functions may be called
-//      - All other protected functions are unsafe
-//      - Debug: unsafe calls hard-fail
-//      - Release: unsafe calls soft-fail (return false / -1, no mutation)
-//
-//  Integrity checks are valid only in stable state, not during mutation
-//  or callback dispatch.
-//
-//  Functions safe during virtual callbacks:
-//
-//      is_initialised(), capacity(), capacity_limit(), minimum_safe_capacity()
-//      peak_usage(), peak_index(), high_index(), index_limit()
-//      lexed_count(), loose_count(), empty_count(), occupied_count()
-//
-//  These functions are non-mutating, do not acquire locks, do not invoke
-//  virtual functions, and do not call is_safe().
-//
-//  INTEGRITY AND VALIDATION
-//  ------------------------
-//  - validate_tree(check_lex_order) verifies AVL structure and balance;
-//    if check_lex_order is true, comparator-defined ordering is validated
-//    via on_compare_keys()
-//  - check_integrity() validates metadata invariants, counts, list
-//    structure, tree balance, and index ranges; it does not validate
-//    comparator ordering
-//
-//  CAPACITY CONSTRAINTS
-//  --------------------
-//  - Maximum supported slot index is std::numeric_limits<TIndex>::max()
-//  - capacity_limit() == index_limit() + 1
-//  - minimum_safe_capacity() == (m_high_index + 1)
-//
-//  TYPE CONSTRAINTS
-//  ----------------
-//  Supported type pairs:
-//      (std::int32_t, std::int16_t)
-//      (std::int16_t, std::int8_t)
-//
-//  Slot metadata layout is constrained for predictable packing.
-//  Slot must be trivially copyable.
+//  See docs/containers/slots/TOrderedSlots.md for the full documentation.
 
 #pragma once
 

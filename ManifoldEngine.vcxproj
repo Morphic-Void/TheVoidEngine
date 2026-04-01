@@ -182,8 +182,13 @@
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="docs\containers\ByteBuffers.md" />
-    <None Include="docs\containers\TOrderedSlots.md" />
-    <None Include="docs\containers\TUnorderedSlots.md" />
+    <None Include="docs\containers\slots\TOrderedSlots.md" />
+    <None Include="docs\containers\slots\TUnorderedSlots.md" />
+    <None Include="docs\containers\StringBuffers.md" />
+    <None Include="docs\containers\TOrderedCollection.md" />
+    <None Include="docs\containers\TPodVector.md" />
+    <None Include="docs\containers\TStableStorage.md" />
+    <None Include="docs\containers\TUnorderedCollection.md" />
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>

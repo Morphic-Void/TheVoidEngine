@@ -1,94 +1,28 @@
 
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
-// 
+//
 //  File:   TStableStorage.hpp
 //  Author: Ritchie Brannan
 //  Date:   24 Mar 26
 //
-//  Stable segmented storage for typed data (noexcept allocation substrate)
-//
 //  Requirements:
 //  - Requires C++17 or later.
 //  - No exceptions.
-//  - T must be non-const.
-//  - Storage is uninitialised raw T[] memory.
-//  - Indices, capacities, and alignment values are in elements.
 //
-//  Overview:
-//  - TStableStorage<T> owns multiple fixed-size buffers of T.
-//  - Buffers are allocated on demand and never relocated.
-//  - Slot indices map to (buffer_index, in-buffer index) via bit arithmetic.
-//  - Address stability is guaranteed once a slot is backed by storage.
+//  Stable segmented storage for typed data over fixed-size buffers.
 //
-//  Scope:
-//  - Models allocation topology and address mapping only.
-//  - Does not track occupancy or liveness.
-//  - Does not construct, destroy, or interpret T.
-//  - Higher-level lifecycle and ownership belong in wrapper layers.
+//  Does not track occupancy, construct or destroy T, or interpret
+//  stored data.
 //
-//  Storage model:
-//  - Storage is segmented into equal-sized buffers (power-of-2 sized).
-//  - Buffer directory is an array of memory::TMemoryToken<T>.
-//  - Buffers are allocated lazily and never moved.
-//  - Growth occurs by allocating new buffers and expanding coverage.
-//  - m_slot_capacity represents the total covered slot range.
+//  IMPORTANT TERMINOLOGY NOTE
+//  --------------------------
+//  Slot indices map to storage via fixed buffer geometry using
+//  bit decomposition.
 //
-//  Addressing model:
-//  - slot_index is decomposed as:
-//        buffer_index  = slot_index >> m_buffer_shift
-//        buffer_slot   = slot_index & m_slot_mask
-//  - slots_per_buffer = m_slot_mask + 1 (power of 2).
-//  - buffer_index < buffer_count() implies allocated backing storage.
+//  Address stability is guaranteed once a slot is backed by storage.
 //
-//  Status model:
-//  - is_valid() performs full invariant verification including directory state.
-//  - is_ready() checks structural coherence without scanning directory contents.
-//  - is_empty() reports fail-safe emptiness (not ready or no covered slots).
-//  - Accessors are fail-safe and return nullptr when not ready or invalid.
-//
-//  Constness model:
-//  - Constness of TStableStorage does not imply const access to managed storage.
-//  - Functions returning T* may be called on const instances.
-//  - Immutable access must be provided by higher-level const view abstractions.
-//
-//  Growth model:
-//  - map_index() ensures storage exists for a slot, allocating as needed.
-//  - index_ptr() performs no allocation and returns nullptr if not backed.
-//  - Buffer directory grows geometrically (power-of-2 capacity).
-//  - Slot coverage grows monotonically in buffer-sized increments.
-//
-//  State model:
-//  - Canonical empty:
-//        m_buffers.data() == nullptr
-//        m_buffer_capacity == 0
-//        m_buffer_shift == 0
-//        m_slot_mask == 0
-//        m_slot_capacity == 0
-//
-//  - Ready state:
-//        Directory allocated and geometry coherent.
-//        Slot coverage may be zero or non-zero.
-//
-//  - Covered range:
-//        [0, m_slot_capacity)
-//
-//  Metadata invariants (ready state):
-//  - m_buffer_capacity is power of 2 and > 0.
-//  - m_buffer_shift defines slots_per_buffer = 1 << m_buffer_shift.
-//  - m_slot_mask == slots_per_buffer - 1.
-//  - m_slot_capacity is a multiple of slots_per_buffer.
-//  - buffer_count() = m_slot_capacity / slots_per_buffer.
-//  - buffer_count() <= m_buffer_capacity.
-//
-//  Directory invariants (valid state):
-//  - Buffers [0, buffer_count()) are allocated (data() != nullptr).
-//  - Buffers [buffer_count(), m_buffer_capacity) are empty (data() == nullptr).
-//
-//  Notes:
-//  - On failure, mutating operations leave previously allocated storage intact.
-//  - No automatic compaction or shrinking is performed.
-//  - This type is intended as a low-level substrate for higher-level containers.
+//  See docs/containers/TStableStorage.md for the full documentation.
 
 #pragma once
 

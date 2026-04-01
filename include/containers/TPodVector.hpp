@@ -1,84 +1,30 @@
 
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
-// 
+//
 //  File:   TPodVector.hpp
 //  Author: Ritchie Brannan
 //  Date:   20 Mar 26
 //
-//  POD vector and typed view utilities (noexcept containers)
-//
 //  Requirements:
 //  - Requires C++17 or later.
 //  - No exceptions.
-//  - Template parameter T must be non-const and trivially copyable.
-//  - Storage is tightly packed contiguous T elements with no per-element padding.
-//  - Sizes, capacities, and indices are expressed in elements.
 //
-//  Overview:
-//  - TPodVector<T> owns a contiguous allocation of tightly packed T elements.
-//  - TPodView<T> provides a non-owning mutable typed view.
-//  - TPodConstView<T> provides a non-owning immutable typed view.
-//  - Storage is managed via memory::TMemoryToken<T>.
+//  Contiguous tightly packed storage for trivially copyable T with
+//  owning vector and non-owning typed views.
 //
-//  Scope:
-//  - This layer models contiguous tightly packed trivially copyable
-//    element storage only.
-//  - It does not perform construction or destruction.
-//  - It does not support non-trivial relocation semantics.
-//  - Higher-level element meaning belongs in wrapper layers above
-//    this substrate.
+//  Does not construct or destroy elements and does not support
+//  non-trivial relocation semantics.
 //
-//  Memory model:
-//  - Ownership and reallocation are provided by memory::TMemoryToken<T>.
-//  - Storage is interpreted directly as tightly packed T[].
-//  - size() and capacity() are expressed in elements.
-//  - Spare capacity beyond size is not part of the logical element range.
+//  IMPORTANT TERMINOLOGY NOTE
+//  --------------------------
+//  Storage is interpreted as tightly packed T[] with no per-element
+//  padding and element stride sizeof(T).
 //
-//  Growth model:
-//  - Automatic growth uses memory::vector_growth_policy() in element units.
-//  - reserve(minimum_capacity) ensures total capacity >= minimum_capacity.
-//  - ensure_free(extra) ensures at least extra spare elements.
-//  - shrink_to_fit() reduces capacity to exactly match the logical size.
+//  Reallocation preserves only the logical element range [0, size).
+//  Spare capacity is not part of the logical range and is not preserved.
 //
-//  Reallocation model:
-//  - Reallocation preserves only the logical element range.
-//  - Only the prefix [0, size) is required to survive reallocation.
-//  - When shrinking, preserved data is truncated to the new size.
-//  - Spare capacity contents are not preserved.
-//  - The underlying allocation may be treated as uninitialised beyond
-//    the logical range.
-//  - Newly exposed logical elements are zero-initialised where required.
-//
-//  Alignment model:
-//  - Storage is tightly packed T[] with stride sizeof(T).
-//  - Allocation alignment is derived from T via t_default_align<T>().
-//  - Alignment is not configurable per instance or operation.
-//
-//  Observation model:
-//  - Accessor functions are fail-safe.
-//  - Public status observers reflect container invariants.
-//  - Full invariant validation may be provided separately.
-//  - size == 0 reports empty even if capacity != 0.
-//  - size == 0, capacity != 0 is a valid ready state.
-//
-//  Typed storage invariants:
-//      {data == nullptr, size == 0, capacity == 0} (canonical empty)
-//      {data != nullptr, size <= capacity, capacity != 0}
-//      storage is tightly packed T[]
-//      alignment is sufficient for T
-//
-//  Initialisation model:
-//  - resize(size) grows logical range and zeroes new elements.
-//  - push_back_zeroed / insert_zeroed expose zeroed storage.
-//  - push_back_uninit / insert_uninit expose uninitialised storage.
-//  - reserve / ensure_free may increase spare capacity without changing size.
-//  - Zeroed growth is byte-zeroing only (no construction).
-//
-//  Copy / representation model:
-//  - Element transfer uses byte-wise copy / move.
-//  - Padding bytes may be propagated.
-//  - Byte-level equality is not guaranteed for semantically equal values.
+//  See docs/TPodVector.md for the full documentation.
 
 #pragma once
 

@@ -1,84 +1,69 @@
 
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
-// 
+//
 //  File:   memory_primitives.hpp
 //  Author: Ritchie Brannan
 //  Date:   22 Feb 26
 //
-//  Raw memory ownership and view primitives.
-//
 //  Requirements:
 //  - Requires C++17 or later.
 //  - No exceptions.
-//  - Alignment values are expressed in bytes.
 //
-//  Overview:
-//  - CMemoryToken provides owning raw byte storage.
-//  - CMemoryView and CMemoryConstView provide non-owning byte views.
-//  - TMemoryToken<T> provides owning typed storage over T[].
-//  - TMemoryView<T> and TMemoryConstView<T> provide typed views.
-//  - Byte and typed views support explicit adoption across the byte/typed
-//    boundary where compatibility permits.
+//  Raw memory ownership and view primitives for byte and typed storage.
 //
-//  Scope:
-//  - This layer models raw storage and address alignment only.
-//  - It does not track allocation size beyond caller-provided arguments.
-//  - It does not perform bounds checking.
-//  - Extent validation belongs to higher layers.
-//  - Typed variants reinterpret storage as tightly packed T[] only.
-//  - No construction, destruction, or non-trivial relocation is performed.
+//  Models address, alignment, and reinterpretation only.
+//  Does not track extent, perform bounds checking, or manage element
+//  lifetime.
+//
+//  IMPORTANT SEMANTIC NOTES
+//  ------------------------
 //
 //  State model:
-//  - Canonical empty state is {data == nullptr, align == 0}.
-//  - Canonical ready state is {data != nullptr, align != 0}.
-//  - Broken invariant states, handled fail-safely if encountered, are:
-//      * {data == nullptr, align != 0}
-//      * {data != nullptr, align == 0}
+//  - Canonical empty: {data == nullptr, align == 0}
+//  - Canonical ready: {data != nullptr, align != 0}
+//  - Broken states:
+//      {data == nullptr, align != 0}
+//      {data != nullptr, align == 0}
 //
 //  Observation model:
-//  - Pointer and align observers are fail-safe:
-//      * with broken invariants they report the canonical empty state
-//  - Readiness and emptiness observers are fail-safe:
-//      * with broken invariants they report not-ready / empty
-//  - Validity observers report invariant validity directly.
+//  - Pointer and align observers are fail-safe and return canonical empty
+//    for broken states
+//  - Readiness and emptiness observers are fail-safe and report
+//    not-ready / empty for broken states
+//  - Validity observers report invariant validity directly
 //
 //  Alignment model:
-//  - For CMemoryToken, align is the stored normalised alignment intent.
-//  - For CMemoryView and CMemoryConstView, align is the currently guaranteed
-//    alignment of the pointed-to address and may be less than actual.
-//  - View align may reduce when subviews are created from byte offsets.
-//  - Typed variants derive alignment from T and the underlying allocation.
-//  - Typed subviews advance in whole T elements and so preserve T alignment.
+//  - CMemoryToken stores normalised alignment intent
+//  - Views report guaranteed alignment of the current address and may
+//    be less than actual
+//  - Subviews may reduce alignment based on byte offset
+//  - Typed variants derive alignment from T and underlying storage
+//  - Typed subviews advance in whole T elements and preserve T alignment
 //
 //  Constness model:
-//  - const on CMemoryToken and CMemoryView applies to the wrapper object only.
-//  - It does not imply immutable access to the referenced memory.
-//  - Read-only access to referenced memory is represented only by
-//    CMemoryConstView and TMemoryConstView<T>.
+//  - const applies to the wrapper only
+//  - does not imply immutable access to referenced memory
+//  - read-only access is represented by const view types only
 //
 //  Typed model:
-//  - TMemoryToken<T> manages storage as a contiguous T[] region.
-//  - TMemoryView<T> and TMemoryConstView<T> provide typed access without
-//    additional metadata.
-//  - Element count is provided externally to allocation/reallocation.
-//  - Typed reallocation requires trivially copyable T.
-//  - No element lifetime management is performed in this layer.
+//  - Typed variants reinterpret storage as tightly packed T[]
+//  - Element count is provided externally
+//  - Typed reallocation requires trivially copyable T
+//  - No construction, destruction, or non-trivial relocation
 //
 //  Adoption model:
-//  - Byte views may adopt typed views directly as a weakening projection.
-//  - Typed views may adopt byte views only when the pointed-to address and
-//    guaranteed alignment are compatible with T.
-//  - Canonical empty state is preserved across byte/typed adoption.
-//  - Failed typed adoption leaves the destination typed view unchanged.
-//  - Extent compatibility for typed ranges belongs to higher layers.
+//  - Byte views may adopt typed views directly
+//  - Typed views may adopt byte views only when address and guaranteed
+//    alignment are compatible with T
+//  - Canonical empty state is preserved across adoption
+//  - Failed typed adoption leaves destination unchanged
 //
 //  Relationship between byte and typed forms:
-//  - Byte primitives define the canonical ownership and alignment model.
-//  - Typed primitives are a thin reinterpretation layer over raw storage.
-//  - Explicit adoption functions provide the checked crossing points between
-//    byte and typed view forms.
-//  - Both forms share the same fail-safe and invariant semantics.
+//  - Byte primitives define ownership and alignment semantics
+//  - Typed primitives are a reinterpretation layer
+//  - Adoption functions define checked crossing points
+//  - Both forms share invariant and fail-safe behaviour
 
 #pragma once
 

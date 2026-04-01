@@ -1,66 +1,30 @@
 
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
-// 
+//
 //  File:   TUnorderedCollection.hpp
 //  Author: Ritchie Brannan
 //  Date:   24 Mar 26
 //
-//  Grouped stable address slots for non-trivial types (noexcept allocation substrate)
-//
 //  Requirements:
 //  - Requires C++17 or later.
 //  - No exceptions.
-//  - Indices, sizes, and capacities are in elements.
 //
-//  TUnorderedCollection<T>
+//  Unordered collection over stable storage with slot-based identity.
 //
-//  Overview
-//  --------
-//  TUnorderedCollection is a move-only unordered collection wrapper over
-//  TUnorderedSlots and TStableStorage.
+//  Uses TUnorderedSlots for slot management and TStableStorage for
+//  address-stable object backing.
 //
-//  Public identity during the mutable phase is slot_index.
-//  Constructed objects have stable addresses in TStableStorage.
-//  pack() remaps slot metadata and slot-side payload, but does not relocate
-//  live T objects.
+//  IMPORTANT TERMINOLOGY NOTE
+//  --------------------------
+//  slot_index is the public identity during mutation and is not stable
+//  across pack().
 //
-//  Pointers / references to live objects remain valid across pack().
+//  pack() remaps slot metadata but does not relocate constructed objects.
 //
-//  State model
-//  -----------
-//  Per-slot collection state is:
+//  Traversal order does not imply rank or ordering.
 //
-//    Unmapped
-//      slot has a valid storage_index binding but backing has not been mapped
-//      for that slot
-//
-//    Mapped
-//      backing is mapped for the bound storage_index but no live T exists there
-//
-//    Constructed
-//      a live T exists at the bound storage_index
-//
-//  Only Constructed slots expose live objects.
-//  Empty slots may still retain valid hidden storage_index bindings.
-//
-//
-//  Semantic notes
-//  --------------
-//  - slot_index is the editable-phase handle
-//  - slot_index is not stable across pack()
-//  - storage_index is internal and not public identity
-//  - traversal order is unordered-slot traversal order
-//  - traversal order does not imply rank, sort order, or insertion order
-//  - slot remap does not imply object relocation
-// 
-// 
-//  Lifetime note
-//  -------------
-//  Object pointers returned by the collection are non-owning views into
-//  placement-constructed objects held in TStableStorage.
-//  Do not destroy returned pointers with delete.
-//  Object lifetime must be ended through the collection API.
+//  See docs/containers/TUnorderedCollection.md for the full documentation.
 
 #pragma once
 

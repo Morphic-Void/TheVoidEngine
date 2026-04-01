@@ -6,181 +6,32 @@
 //  Author: Ritchie Brannan
 //  Date:   10 Jan 26
 //
+//  Requirements:
+//  - Requires C++17 or later.
+//  - No exceptions.
 //
-//  IMPORTANT SEMANTIC NOTE:
+//  Metadata-only unordered slot index over an external payload domain.
 //
-//  In TUnorderedSlots, traversal order is list order.
+//  Does not own payload or define payload movement semantics.
+//
+//  IMPORTANT SEMANTIC NOTE
+//  -----------------------
+//  Traversal order is list order.
 //  Traversal order does not define rank.
 //
 //  Rank is defined over loose slots only.
-//  rank(slot_index) == number of loose slots with lower slot index.
-//  Empty slots have no rank and return -1.
-//  Valid rank domain is [0, loose_count()).
 //
-//  pack() compacts loose payload into slot indices [0, loose_count())
-//  and rebuilds the loose and empty lists in ascending slot index order.
-//  pack() does not preserve empty-slot payload, does not define rank,
-//  and does not provide full-domain remapping.
+//  pack() compacts loose slots only. It does not perform full-domain
+//  remapping and does not preserve empty-slot payload.
 //
-//  Do not assume that TOrderedSlots rank or remapping semantics apply here.
+//  Migration notes
+//  ---------------
+//  Do not assume TOrderedSlots rank or remapping semantics.
 //
+//  TOrderedSlots uses full-domain rank and total reordering.
+//  TUnorderedSlots uses occupied-domain rank and compaction only.
 //
-//  TUnorderedSlots<TIndex>
-//
-//  Overview
-//  --------
-//  TUnorderedSlots is a single-threaded unordered index over an external slot array.
-//
-//  The template owns and manages slot metadata only:
-//      - Bi-directional list links (prev_index, next_index)
-//      - Slot state (loose / empty / internal transitional states)
-//      - Category counts and high/peak tracking
-//
-//  The derived class owns the payload and must implement:
-//
-//      on_visit(slot_index, identifier)
-//      on_move_payload(source_index, target_index)
-//      on_reserve_empty(minimum_capacity, recommended_capacity)
-//
-//
-//  Scope
-//  -----
-//  - Metadata only; no payload ownership
-//  - No payload construction or destruction
-//  - Payload movement semantics are defined by the derived class
-//
-//
-//  State model
-//  -----------
-//  Slot indices are integers in [0, capacity()).
-//  Each slot index addresses both slot metadata and its corresponding derived payload element.
-//
-//  Steady-state slot categories:
-//      Loose  - occupied, identity-bearing payload
-//      Empty  - available free space
-//
-//  Steady-state invariants:
-//      - m_loose_count + m_empty_count == m_capacity
-//      - Loose and empty slots each form a circular bi-directional list
-//      - m_high_index is the highest occupied slot index (or -1 if none)
-//      - m_peak_usage and m_peak_index record historical maxima
-//      - No slot belongs to more than one steady-state category
-//
-//  Internal transitional states are implementation detail only and are not part of the external model.
-//
-//
-//  Observation model
-//  -----------------
-//  Traversal order:
-//      - Defined strictly by loose/empty list order
-//      - No rank information is supplied or implied during traversal
-//
-//  Rank:
-//      - Defined strictly by ascending slot index over loose slots
-//      - rank(slot_index) == number of loose slots with lower slot index
-//      - Valid rank domain is [0, loose_count())
-//      - Empty slots have no rank and return -1
-//
-//  Pack result:
-//      - Loose payload is compacted into [0, loose_count())
-//      - Remaining slots are Empty
-//      - Loose and empty lists are rebuilt in ascending slot index order
-//
-//  Only loose slots are identity-bearing.
-//  Empty slots are free space only.
-//  No full-domain remapping guarantee is provided.
-//
-//
-//  Lifecycle
-//  ---------
-//  - initialise(capacity) allocates metadata and marks all slots Empty
-//  - shutdown() releases metadata and resets to uninitialised
-//  - safe_resize()/reserve_empty() adjust capacity subject to invariants
-//  - pack() compacts loose payload and rebuilds metadata
-//
-//
-//  Locking and re-entry model
-//  --------------------------
-//  The template is strictly single-threaded.
-//
-//  During execution of a virtual callback the template enters a lock state:
-//
-//      LockState::on_visit
-//      LockState::on_move_payload
-//      LockState::on_reserve_empty
-//
-//  Bulk operations hold the corresponding lock for the duration of the coordinated phase.
-//  Virtual callbacks execute within that locked phase.
-//
-//  While locked:
-//      - Only explicitly safe accessor functions may be called
-//      - All other protected functions are unsafe
-//      - Debug: unsafe calls hard-fail
-//      - Release: unsafe calls soft-fail (return false / -1, no mutation)
-//
-//  Functions safe during virtual callbacks:
-//
-//      is_initialised(), capacity(), capacity_limit(), minimum_safe_capacity()
-//      peak_usage(), peak_index(), high_index(), index_limit()
-//      loose_count(), empty_count()
-//
-//  These functions are non-mutating, do not acquire locks,
-//  do not invoke virtual functions, and do not call is_safe().
-//
-//
-//  Integrity and validation
-//  ------------------------
-//  - check_integrity() validates metadata invariants, counts, list structure, and index ranges
-//
-//
-//  Capacity model
-//  --------------
-//  - Maximum supported slot index is std::numeric_limits<TIndex>::max()
-//  - capacity_limit() == index_limit() + 1
-//  - minimum_safe_capacity() == high_index() + 1
-//  - Growth is constrained by the slot index domain, not just by loose_count()
-//
-//
-//  Migration and alignment with TOrderedSlots
-//  ------------------------------------------
-//  TOrderedSlots and TUnorderedSlots define rank differently.
-//
-//  TOrderedSlots:
-//      - Rank is full-domain
-//      - Occupied and empty slots both participate in remapping
-//      - pack()/sort_and_pack() perform total reordering
-//
-//  TUnorderedSlots:
-//      - Rank is occupied-domain only
-//      - Empty slots have no rank and no stable identity
-//      - pack() performs occupied compaction only
-//
-//  Migration constraints:
-//
-//      - Do not assume empty-slot payload preservation
-//      - Do not assume empty-slot remapping
-//      - Do not assume full-domain rank behaviour
-//
-//      - Do not treat TOrderedSlots rank as occupied-only
-//      - Do not treat ordered/full-domain operations as simple compaction
-//
-//  A derived class may implement on_move_payload() using swap-like behaviour.
-//  In TUnorderedSlots this avoids destructive empty-slot behaviour.
-//  In TOrderedSlots this is safe but typically less efficient than full-domain reordering.
-// 
-//  When migrating code written only for TUnorderedSlots, do not assume that
-//  TOrderedSlots::on_move_payload() uses only non-negative indices.
-//
-//
-//  Type constraints
-//  ----------------
-//  Supported types:
-//      std::int32_t
-//      std::int16_t
-//
-//  TIndex must be signed.
-//  Slot metadata representation is constrained for compact flag/index encoding.
-//  Slot must be trivially copyable.
+//  See docs/containers/slots/TUnorderedSlots.md for the full documentation.
 
 #pragma once
 

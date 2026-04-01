@@ -58,6 +58,9 @@
     <Filter Include="include\containers\slots">
       <UniqueIdentifier>{801217ca-876b-424e-b9ed-2d756058e2e7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="docs\containers\slots">
+      <UniqueIdentifier>{19f2eb8e-4ae8-4905-948a-71d006086f47}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\containers\ByteBuffers.hpp">
@@ -151,17 +154,32 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="docs\containers\TOrderedSlots.md">
-      <Filter>docs\containers</Filter>
-    </None>
-    <None Include="docs\containers\TUnorderedSlots.md">
-      <Filter>docs\containers</Filter>
-    </None>
     <None Include="docs\containers\ByteBuffers.md">
       <Filter>docs\containers</Filter>
     </None>
     <None Include=".gitignore" />
     <None Include="README.md" />
+    <None Include="docs\containers\slots\TOrderedSlots.md">
+      <Filter>docs\containers\slots</Filter>
+    </None>
+    <None Include="docs\containers\slots\TUnorderedSlots.md">
+      <Filter>docs\containers\slots</Filter>
+    </None>
+    <None Include="docs\containers\TOrderedCollection.md">
+      <Filter>docs\containers</Filter>
+    </None>
+    <None Include="docs\containers\TStableStorage.md">
+      <Filter>docs\containers</Filter>
+    </None>
+    <None Include="docs\containers\TUnorderedCollection.md">
+      <Filter>docs\containers</Filter>
+    </None>
+    <None Include="docs\containers\StringBuffers.md">
+      <Filter>docs\containers</Filter>
+    </None>
+    <None Include="docs\containers\TPodVector.md">
+      <Filter>docs\containers</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="LICENSE.txt" />

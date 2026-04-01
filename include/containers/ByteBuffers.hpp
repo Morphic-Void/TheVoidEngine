@@ -1,89 +1,29 @@
 
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
-// 
+//
 //  File:   ByteBuffers.hpp
 //  Author: Ritchie Brannan
 //  Date:   22 Feb 26
 //
-//  POD byte buffer and byte-rect buffer utilities (noexcept containers)
-//
 //  Requirements:
 //  - Requires C++17 or later.
 //  - No exceptions.
-//  - Storage is raw bytes (std::uint8_t).
-//  - Sizes, capacities, extents, and alignment values are in bytes.
 //
-//  Overview:
-//  - CByteBuffer owns contiguous byte storage with optional spare capacity.
-//  - CByteView and CByteConstView provide non-owning contiguous views.
-//  - CByteRectBuffer owns rectangular byte storage with aligned row starts.
-//  - CByteRectView and CByteRectConstView provide non-owning rect views.
+//  Owning and non-owning byte storage utilities for contiguous and
+//  rectangular layouts.
 //
-//  Scope:
-//  - Models byte storage only.
-//  - No element, texel, pixel, or structure semantics are imposed.
-//  - Higher-level interpretation belongs in wrapper layers.
+//  Models raw byte storage only. Does not impose element, texel,
+//  pixel, or structure semantics.
 //
-//  Memory model:
-//  - Storage ownership is provided by memory::CMemoryToken.
-//  - Views are provided by memory::CMemoryView and
-//    memory::CMemoryConstView.
-//  - Logical extent metadata is stored separately from the storage handle.
+//  IMPORTANT TERMINOLOGY NOTE
+//  --------------------------
+//  Alignment refers to the guaranteed alignment at the current storage
+//  origin or view origin. Subviews may reduce alignment guarantees.
 //
-//  Status model:
-//  - is_valid() reports invariant validity.
-//  - is_empty() reports logical emptiness.
-//  - is_ready() reports a non-empty state suitable for access.
-//  - Accessors are fail-safe and return null, zero, or empty results
-//    when not ready.
+//  Rect storage is byte-contiguous only when row_width == row_pitch.
 //
-//  Constness model:
-//  - Const on buffers and mutable views does not imply immutable storage.
-//  - Immutable access is provided by CByteConstView and CByteRectConstView.
-//
-//  Alignment model:
-//  - Alignment applies to the base address or current view origin.
-//  - Passing align == 0 (or row_align == 0) reuses existing alignment intent
-//    when available, otherwise allocation-layer normalisation rules apply.
-//  - Rect buffers derive row_pitch from row_width and alignment.
-//  - Subviews may reduce alignment guarantees based on offset.
-//
-//  Contiguous model:
-//  - size() is the logical byte extent.
-//  - capacity() is the allocated byte extent.
-//  - size() may be less than capacity().
-//  - set_size() may expose uninitialised bytes.
-//
-//  Rect model:
-//  - row_pitch is the byte step between rows.
-//  - row_width is the active byte extent within each row.
-//  - row_count is the number of rows.
-//  - Rects are byte-contiguous only when row_width == row_pitch.
-//  - byte_view() and byte_const_view() return empty when not contiguous.
-//
-//  Metadata invariants:
-//
-//  MetaByteView:
-//      size == 0                                          (canonical empty)
-//      size <= memory::k_max_elements
-//
-//  MetaByteBuffer:
-//      {size == 0, capacity == 0}                         (canonical empty)
-//      {size == 0, capacity != 0}                         (valid ready)
-//      size <= capacity <= memory::k_max_elements
-//
-//  MetaByteRectView:
-//      {0, 0, 0}                                          (canonical empty)
-//      row_width <= row_pitch
-//      row_pitch * row_count <= memory::k_max_elements
-//      contiguous iff row_width == row_pitch
-//
-//  Notes:
-//  - Detailed behavioural contracts are documented in ByteBuffers.md.
-//  - On failure, mutating operations leave state unchanged unless
-//    stated otherwise.
-//
+//  See docs/ByteBuffers.md for the full documentation.
 
 #pragma once
 

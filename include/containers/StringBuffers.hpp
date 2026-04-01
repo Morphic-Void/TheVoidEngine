@@ -1,63 +1,35 @@
 
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
-// 
+//
 //  File:   StringBuffers.hpp
 //  Author: Ritchie Brannan
 //  Date:   22 Feb 26
 //
-//  String view, string buffer, and stable string table utilities (noexcept)
-//
 //  Requirements:
 //  - Requires C++17 or later.
 //  - No exceptions.
-//  - Strings are stored and manipulated as byte sequences.
-//  - No wchar_t, char16_t, char32_t, or platform-specific wide encodings are used.
-//  - Zero-terminated and explicit-length string forms are both supported.
 //
-//  Overview:
-//  - CStringView provides a non-owning byte-string view.
-//  - CSimpleString provides owning immutable-size byte-string storage.
-//  - CStringBuffer provides appendable packed byte-string storage
-//    addressed by payload offsets.
-//  - CStableStrings provides appendable stable string IDs with lookup and
-//    sortable physical storage.
+//  Byte-string view, buffer, and stable string table utilities.
 //
-//  Scope:
-//  - This layer models byte-string storage and lookup only.
-//  - It does not validate or interpret encoding.
-//  - It does not provide locale-aware or Unicode-aware collation.
-//  - Higher-level string meaning belongs in wrapper layers above
-//    this substrate.
+//  Models byte-sequence strings only. Does not validate encoding or
+//  provide locale or Unicode-aware behaviour.
 //
-//  String model:
-//  - CStringView and CSimpleString carry a string pointer plus explicit length.
-//  - CStringBuffer stores strings in packed form as:
+//  IMPORTANT TERMINOLOGY NOTE
+//  --------------------------
+//  Strings are treated as byte sequences with explicit length or
+//  zero-terminated packed storage.
+//
+//  CStringBuffer stores strings as:
 //      0 + payload bytes + 0
-//  - Offsets returned by CStringBuffer refer to the first payload byte,
-//    not the prefixed zero byte.
-//  - CStringBuffer does not store payload length internally.
-//  - Strings with embedded terminators therefore require externally
-//    associated length metadata.
 //
-//  Stable string table model:
-//  - CStableStrings stores payload bytes in a CStringBuffer.
-//  - Each logical string also has a StringRef recording payload offset
-//    and explicit length.
-//  - Stable IDs, ref-indices, and sorted lexical order are maintained
-//    by side tables.
-//  - ID value 0 is reserved as an invalid sentinel.
+//  Offsets refer to the first payload byte. Payload length is not
+//  stored internally.
 //
-//  Observation model:
-//  - Accessors are fail-safe.
-//  - Invalid lookup operations return empty views, null pointers, or
-//    invalid sentinel values as appropriate.
-//  - Integrity checking for compound stable-string state is provided by
-//    check_integrity().
+//  Stable string IDs are managed separately from payload storage.
+//  ID value 0 is reserved as an invalid sentinel.
 //
-//  Comparison model:
-//  - String comparison in this layer is byte-wise and length-aware.
-//  - No encoding-aware normalisation or collation is performed here.
+//  See docs/containers/StringBuffers.md for the full documentation.
 
 #pragma once
 
