@@ -33,7 +33,7 @@
 
 #include <algorithm>    //  std::max, std::min
 #include <cstddef>      //  std::size_t
-#include <type_traits>  //  std::is_const_v
+#include <type_traits>  //  std::is_const_v, std::is_nothrow_destructible_v
 #include <utility>      //  std::forward<TArgs>
 
 #include "algo/validate_permutations.hpp"
@@ -58,6 +58,7 @@ class TUnorderedCollection : public slots::CUnorderedSlots_int32
 private:
     using base_class = slots::CUnorderedSlots_int32;
     static_assert(!std::is_const_v<T>, "TUnorderedCollection<T> requires non-const T.");
+    static_assert(std::is_nothrow_destructible_v<T>, "TUnorderedCollection<T> requires T to be nothrow destructible.");
 
 public:
 

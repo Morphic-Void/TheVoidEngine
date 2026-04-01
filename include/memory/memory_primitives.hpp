@@ -306,6 +306,11 @@ public:
     TMemoryToken& operator=(TMemoryToken&& other) noexcept;
     ~TMemoryToken() noexcept { deallocate(); }
 
+    //  Status
+    [[nodiscard]] bool is_empty() const noexcept { return m_data == nullptr; }
+    [[nodiscard]] bool is_ready() const noexcept { return m_data != nullptr; }
+    [[nodiscard]] explicit operator bool() const noexcept { return m_data != nullptr; }
+
     //  Views
     [[nodiscard]] TMemoryView<T> view() const noexcept { return TMemoryView<T>{ m_data }; }
     [[nodiscard]] TMemoryConstView<T> const_view() const noexcept { return TMemoryConstView<T>{ m_data }; }

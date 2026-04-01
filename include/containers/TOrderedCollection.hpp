@@ -35,7 +35,7 @@
 
 #include <algorithm>    //  std::max, std::min
 #include <cstddef>      //  std::size_t
-#include <type_traits>  //  std::is_const_v, std::is_trivially_copyable_v
+#include <type_traits>  //  std::is_const_v, std::is_nothrow_destructible_v, std::is_trivially_copyable_v
 #include <utility>      //  std::forward<TArgs>
 
 #include "algo/validate_permutations.hpp"
@@ -61,6 +61,7 @@ private:
     using base_class = slots::COrderedSlots_int32;
     static_assert(!std::is_const_v<T>, "TOrderedCollection<T, TKey> requires non-const T.");
     static_assert(!std::is_const_v<TKey>, "TOrderedCollection<T, TKey> requires non-const TKey.");
+    static_assert(std::is_nothrow_destructible_v<T>, "TOrderedCollection<T, TKey> requires T to be nothrow destructible.");
     static_assert(std::is_trivially_copyable_v<TKey>, "TOrderedCollection<T, TKey> requires trivially copyable TKey.");
 
 public:
