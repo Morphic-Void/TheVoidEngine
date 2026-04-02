@@ -90,9 +90,22 @@ Traversal follows TUnorderedSlots behaviour.
 pack():
 
 - compacts slot metadata
-- remaps slot_index values
+- remaps slot indexing
 - does not move constructed objects
 - preserves object addresses
+
+If external slot-index keyed state must survive pack(), call
+build_rank_map() before pack() and apply the remap from that
+pre-pack map.
+
+The rank map must be produced before pack() to be meaningful. A rank
+map produced after pack() is only the post-pack identity mapping.
+
+Remap semantics follow the underlying TUnorderedSlots contract:
+
+- mapping is defined over the occupied domain
+- non-participating entries may contain -1 sentinels
+- empty slots do not participate in rank identity
 
 ## Lifetime model
 

@@ -93,10 +93,23 @@ Ordering is defined by TOrderedSlots.
 
 sort_and_pack():
 
-- reorders slot metadata, payload, and keys
+- reorders slot metadata, indexing, and keys
 - produces packed canonical slot layout
 - does not move constructed objects
 - preserves object addresses
+
+If external slot-index keyed state must survive sort_and_pack(), call
+build_rank_map() before sort_and_pack() and apply the remap from that
+pre-pack map.
+
+The rank map must be produced before sort_and_pack() to be meaningful.
+A rank map produced after sort_and_pack() is only the post-pack
+identity mapping.
+
+Remap semantics follow the underlying TOrderedSlots contract:
+
+- mapping is defined over the full managed domain
+- both ordered and empty slots participate
 
 ## Lifetime model
 
