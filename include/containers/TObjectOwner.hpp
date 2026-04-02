@@ -2,14 +2,14 @@
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
 //
-//  File:   TObjectOwner.hpp
+//  File:   TInstance.hpp
 //  Author: Ritchie Brannan
 //  Date:   01 Apr 26
 //
 //  Move-only owning single-object wrapper over TMemoryToken<T>.
 //
 //  Overview:
-//  - TObjectOwner<T> owns storage for exactly one T.
+//  - TInstance<T> owns storage for exactly one T.
 //  - Non-empty state always implies that exactly one live T object is present.
 //  - Construction is fused with acquisition.
 //  - Destruction destroys the object and then releases the storage.
@@ -32,8 +32,8 @@
 
 #pragma once
 
-#ifndef TOBJECT_OWNER_HPP_INCLUDED
-#define TOBJECT_OWNER_HPP_INCLUDED
+#ifndef TINSTANCE_HPP_INCLUDED
+#define TINSTANCE_HPP_INCLUDED
 
 #include <cstdint>
 #include <new>
@@ -45,27 +45,27 @@
 #include "debug/debug.hpp"
 
 template<typename T>
-class TObjectOwner final
+class TInstance final
 {
-    static_assert(!std::is_array_v<T>, "TObjectOwner<T> does not support array types.");
-    static_assert(!std::is_reference_v<T>, "TObjectOwner<T> does not support reference types.");
-    static_assert(!std::is_const_v<T>, "TObjectOwner<T> should not own const-qualified types.");
-    static_assert(!std::is_volatile_v<T>, "TObjectOwner<T> should not own volatile-qualified types.");
-    static_assert(std::is_nothrow_destructible_v<T>, "TObjectOwner<T> requires T to be nothrow destructible.");
+    static_assert(!std::is_array_v<T>, "TInstance<T> does not support array types.");
+    static_assert(!std::is_reference_v<T>, "TInstance<T> does not support reference types.");
+    static_assert(!std::is_const_v<T>, "TInstance<T> should not own const-qualified types.");
+    static_assert(!std::is_volatile_v<T>, "TInstance<T> should not own volatile-qualified types.");
+    static_assert(std::is_nothrow_destructible_v<T>, "TInstance<T> requires T to be nothrow destructible.");
 
 public:
 
     //  Default and deleted lifetime
-    TObjectOwner() noexcept = default;
-    TObjectOwner(const TObjectOwner&) = delete;
-    TObjectOwner& operator=(const TObjectOwner&) = delete;
+    TInstance() noexcept = default;
+    TInstance(const TInstance&) = delete;
+    TInstance& operator=(const TInstance&) = delete;
 
     //  Move lifetime
-    TObjectOwner(TObjectOwner&& other) noexcept : m_token(std::move(other.m_token)) {}
-    TObjectOwner& operator=(TObjectOwner&& other) noexcept;
+    TInstance(TInstance&& other) noexcept : m_token(std::move(other.m_token)) {}
+    TInstance& operator=(TInstance&& other) noexcept;
 
     //  Destructor
-    ~TObjectOwner() noexcept { destroy_and_deallocate(); }
+    ~TInstance() noexcept { destroy_and_deallocate(); }
 
     //  Status
     [[nodiscard]] bool is_empty() const noexcept { return m_token.is_empty(); }
@@ -79,10 +79,10 @@ public:
     [[nodiscard]] const T* operator->() const noexcept;
 
     //  Content management
-    template<typename... TArgs> [[nodiscard]] static TObjectOwner create(TArgs&&... args) noexcept;
+    template<typename... TArgs> [[nodiscard]] static TInstance create(TArgs&&... args) noexcept;
     template<typename... TArgs> bool emplace(TArgs&&... args) noexcept;
     void reset() noexcept;
-    void swap(TObjectOwner& other) noexcept;
+    void swap(TInstance& other) noexcept;
 
 private:
     void destroy_and_deallocate() noexcept;
@@ -91,27 +91,27 @@ private:
 };
 
 //==============================================================================
-//  TObjectOwner<T> non-member helper functions
+//  TInstance<T> non-member helper functions
 //==============================================================================
 
 template<typename T>
-inline void swap(TObjectOwner<T>& lhs, TObjectOwner<T>& rhs) noexcept
+inline void swap(TInstance<T>& lhs, TInstance<T>& rhs) noexcept
 {   //  exchange payloads
     lhs.swap(rhs);
 }
 
 template<typename T, typename... TArgs>
-inline TObjectOwner<T> make_object_owner(TArgs&&... args) noexcept
+inline TInstance<T> make_object_owner(TArgs&&... args) noexcept
 {   //  factory
-    return TObjectOwner<T>::create(std::forward<TArgs>(args)...);
+    return TInstance<T>::create(std::forward<TArgs>(args)...);
 }
 
 //==============================================================================
-//  TObjectOwner<T> out of class function bodies
+//  TInstance<T> out of class function bodies
 //==============================================================================
 
 template<typename T>
-inline TObjectOwner<T>& TObjectOwner<T>::operator=(TObjectOwner<T>&& other) noexcept
+inline TInstance<T>& TInstance<T>::operator=(TInstance<T>&& other) noexcept
 {
     if (this != &other)
     {
@@ -122,28 +122,28 @@ inline TObjectOwner<T>& TObjectOwner<T>::operator=(TObjectOwner<T>&& other) noex
 }
 
 template<typename T>
-inline T& TObjectOwner<T>::operator*() noexcept
+inline T& TInstance<T>::operator*() noexcept
 {
     MV_HARD_ASSERT(m_token.data() != nullptr);
     return *m_token.data();
 }
 
 template<typename T>
-inline const T& TObjectOwner<T>::operator*() const noexcept
+inline const T& TInstance<T>::operator*() const noexcept
 {
     MV_HARD_ASSERT(m_token.data() != nullptr);
     return *m_token.data();
 }
 
 template<typename T>
-inline T* TObjectOwner<T>::operator->() noexcept
+inline T* TInstance<T>::operator->() noexcept
 {
     MV_HARD_ASSERT(m_token.data() != nullptr);
     return m_token.data();
 }
 
 template<typename T>
-inline const T* TObjectOwner<T>::operator->() const noexcept
+inline const T* TInstance<T>::operator->() const noexcept
 {
     MV_HARD_ASSERT(m_token.data() != nullptr);
     return m_token.data();
@@ -151,22 +151,22 @@ inline const T* TObjectOwner<T>::operator->() const noexcept
 
 template<typename T>
 template<typename... TArgs>
-inline TObjectOwner<T> TObjectOwner<T>::create(TArgs&&... args) noexcept
+inline TInstance<T> TInstance<T>::create(TArgs&&... args) noexcept
 {
     static_assert(std::is_nothrow_constructible_v<T, TArgs&&...>,
-        "TObjectOwner<T>::create(...) requires T to be nothrow constructible.");
+        "TInstance<T>::create(...) requires T to be nothrow constructible.");
 
-    TObjectOwner owner;
+    TInstance owner;
     (void)owner.emplace(std::forward<TArgs>(args)...);
     return owner;
 }
 
 template<typename T>
 template<typename... TArgs>
-inline bool TObjectOwner<T>::emplace(TArgs&&... args) noexcept
+inline bool TInstance<T>::emplace(TArgs&&... args) noexcept
 {
     static_assert(std::is_nothrow_constructible_v<T, TArgs&&...>,
-        "TObjectOwner<T>::emplace(...) requires T to be nothrow constructible.");
+        "TInstance<T>::emplace(...) requires T to be nothrow constructible.");
 
     T* ptr = m_token.data();
     if (ptr != nullptr)
@@ -186,7 +186,7 @@ inline bool TObjectOwner<T>::emplace(TArgs&&... args) noexcept
 }
 
 template<typename T>
-inline void TObjectOwner<T>::destroy_and_deallocate() noexcept
+inline void TInstance<T>::destroy_and_deallocate() noexcept
 {
     T* const ptr = m_token.data();
     if (ptr != nullptr)
@@ -198,17 +198,17 @@ inline void TObjectOwner<T>::destroy_and_deallocate() noexcept
 }
 
 template<typename T>
-inline void TObjectOwner<T>::reset() noexcept
+inline void TInstance<T>::reset() noexcept
 {
     destroy_and_deallocate();
 }
 
 template<typename T>
-inline void TObjectOwner<T>::swap(TObjectOwner& other) noexcept
+inline void TInstance<T>::swap(TInstance& other) noexcept
 {
     using std::swap;
     swap(m_token, other.m_token);
 }
 
-#endif  //  TOBJECT_OWNER_HPP_INCLUDED
+#endif  //  TINSTANCE_HPP_INCLUDED
 
