@@ -154,6 +154,7 @@
     <ClCompile Include="src\main\ManifoldEngine.cpp" />
     <ClCompile Include="src\tests\TOrderedSlots_test_harness.cpp" />
     <ClCompile Include="src\tests\TUnorderedSlots_test_harness.cpp" />
+    <ClCompile Include="src\types\fp16data_t.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\algo\validate_permutations.hpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="include\memory\memory_primitives.hpp" />
     <ClInclude Include="include\tests\TOrderedSlots_test_harness.hpp" />
     <ClInclude Include="include\tests\TUnorderedSlots_test_harness.hpp" />
+    <ClInclude Include="include\types\fp16data_t.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />

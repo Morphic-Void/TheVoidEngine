@@ -23,6 +23,8 @@
 #include "debug/debug.hpp"
 #include "io/file/file.hpp"
 #include "io/file/log.hpp"
+#include "types/fp16data_t.hpp"
+
 #include "tests/TOrderedSlots_test_harness.hpp"
 #include "tests/TUnorderedSlots_test_harness.hpp"
 
