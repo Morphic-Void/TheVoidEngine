@@ -11,7 +11,7 @@
 #ifndef TRING_TRANSPORT_HPP_INCLUDED
 #define TRING_TRANSPORT_HPP_INCLUDED
 
-#include <algorithm>    //  std::max
+#include <algorithm>    //  std::min, std::max
 #include <atomic>       //  std::atomic
 #include <cstddef>      //  std::size_t
 #include <cstdint>      //  std::uint32_t
@@ -49,19 +49,27 @@ public:
     TRing& operator=(TRing&&) noexcept = delete;
     ~TRing() noexcept { (void)deallocate(); }
 
-    //  Status
+    //  Producer status
+    //  - only safe to call from the producer thread or while quiescent
     [[nodiscard]] bool producer_is_valid() const noexcept;
+
+    //  Consumer status
+    //  - only safe to call from the consumer thread or while quiescent
     [[nodiscard]] bool consumer_is_valid() const noexcept;
+
+    //  Shared status
     [[nodiscard]] bool is_valid() const noexcept;
     [[nodiscard]] bool is_ready() const noexcept;
 
     //  Producer operations
+    //  - only safe to call from the producer thread
     bool post(const T& src) noexcept { return post(&src, 1u); }
     bool post(const T* const src, const std::uint32_t count = 1u) noexcept;
     bool post(const TPodConstView<T>& src) noexcept { return post(src.data(), src.size()); }
     [[nodiscard]] std::uint32_t writable_count() const noexcept;
 
     //  Consumer operations
+    //  - only safe to call from the consumer thread
     bool read(T& dst) noexcept { return read(&dst, 1u); }
     bool read(T* const dst, const std::uint32_t count = 1u) noexcept;
     bool read(const TPodView<T>& dst) noexcept { return read(dst.data(), dst.size()); }

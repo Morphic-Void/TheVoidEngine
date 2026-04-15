@@ -11,7 +11,7 @@
 #ifndef TQUEUE_TRANSPORT_HPP_INCLUDED
 #define TQUEUE_TRANSPORT_HPP_INCLUDED
 
-#include <algorithm>    //  std::max
+#include <algorithm>    //  std::min, std::max
 #include <atomic>       //  std::atomic
 #include <cstddef>      //  std::size_t
 #include <cstdint>      //  std::uint32_t
@@ -21,6 +21,7 @@
 #include "memory/memory_allocation.hpp"
 #include "memory/memory_primitives.hpp"
 #include "bit_utils/bit_ops.hpp"
+#include "debug/debug.hpp"
 
 namespace threading::transports
 {
@@ -61,11 +62,13 @@ public:
     [[nodiscard]] bool consumer_is_ready() const noexcept;
 
     //  Producer operations
+    //  - only safe to call from the producer thread
     bool post(const T& src) noexcept { return post(&src, 1u); }
     bool post(const T* const src, const std::uint32_t count = 1u) noexcept;
     bool post(const TPodConstView<T>& src) noexcept { return post(src.data(), src.size()); }
 
     //  Consumer operations
+    //  - only safe to call from the consumer thread
     bool read(T& dst) noexcept { return read(&dst, 1u); }
     bool read(T* const dst, const std::uint32_t count = 1u) noexcept;
     bool read(const TPodView<T>& dst) noexcept { return read(dst.data(), dst.size()); }
@@ -215,20 +218,26 @@ inline bool TQueue<T>::post(const T* const src, const std::uint32_t count) noexc
 
         //  Growth and buffer discard policy
         bool discard = false;
-        const std::uint32_t capacity = std::min(std::max(growth_policy(output_buffer.size + count), m_capacity), m_max_capacity);
-        if (count <= (capacity - output_buffer.size))
-        {   //  buffer growth can accomodate the new posting
-            m_capacity = capacity;
-        }
-        else if (m_allow_discard)
-        {   //  buffer discard and growth can accomodate the new posting
-            output_buffer.size = 0u;
-            m_capacity = capacity;
-            discard = true;
-        }
-        else
-        {   //  buffer discarding is not allowed, discard the current posting
-            return false;
+        if (count > (m_capacity - output_buffer.size))
+        {
+            const std::uint32_t capacity = std::min(std::max(growth_policy(output_buffer.size + count), m_capacity), m_max_capacity);
+            if (count <= (capacity - output_buffer.size))
+            {   //  buffer growth can accomodate the new posting
+                m_capacity = capacity;
+            }
+            else if (m_allow_discard)
+            {   //  buffer discard and growth can accomodate the new posting
+                if (count > m_capacity)
+                {
+                    m_capacity = std::min(std::max(growth_policy(count), m_capacity), m_max_capacity);
+                }
+                output_buffer.size = 0u;
+                discard = true;
+            }
+            else
+            {   //  buffer discarding is not allowed, discard the current posting
+                return false;
+            }
         }
 
         //  Exchange protocol
