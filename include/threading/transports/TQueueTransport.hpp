@@ -5,6 +5,31 @@
 //  File:   TQueueTransport.hpp
 //  Author: Ritchie Brannan
 //  Date:   15 Apr 26
+//
+//  Requirements:
+//  - Requires C++17 or later.
+//  - No exceptions.
+//
+//  Triple-buffered SPSC sequential transport for trivially copyable T.
+//
+//  Does not provide MPMC-style queue semantics, blocking semantics,
+//  or shared random access.
+//
+//  IMPORTANT SEMANTIC NOTE
+//  -----------------------
+//  post() and read() are all-or-nothing at the API boundary.
+//
+//  Consumer acceptance is phase-gated and only occurs through
+//  refresh_readable_count() when no consumer buffer is currently owned.
+//
+//  Fixed-capacity mode may allow producer-side discard.
+//  Growable mode may increase producer-side working capacity up to a
+//  configured maximum.
+//
+//  Allocation failure during producer-side reallocation poisons the
+//  producer side.
+//
+//  See docs/TQueueTransport.md for the full documentation.
 
 #pragma once
 

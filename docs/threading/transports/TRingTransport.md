@@ -3,7 +3,7 @@ License: MIT (see LICENSE file in repository root)
 
 File:   TRingTransport.md  
 Author: Ritchie Brannan  
-Date:   1 Apr 2026  
+Date:   15 Apr 2026  
 
 # TRing
 
