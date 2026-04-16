@@ -5,6 +5,27 @@
 //  File:   TRingTransport.hpp
 //  Author: Ritchie Brannan
 //  Date:   15 Apr 26
+//
+//  Requirements:
+//  - Requires C++17 or later.
+//  - No exceptions.
+//
+//  Fixed-capacity SPSC ring transport for trivially copyable T.
+//
+//  Does not grow, discard, overwrite unread data, or provide blocking
+//  semantics.
+//
+//  IMPORTANT SEMANTIC NOTE
+//  -----------------------
+//  post() and read() are all-or-nothing.
+//
+//  writable_count() and readable_count() are snapshot observations,
+//  not reservation mechanisms.
+//
+//  Capacity is conditioned at initialise() time to a power-of-two
+//  internal capacity with a minimum floor.
+//
+//  See docs/threading/transports/TRingTransport.md for the full documentation.
 
 #pragma once
 

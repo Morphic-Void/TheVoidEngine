@@ -1,17 +1,22 @@
-Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
-License: MIT (see LICENSE file in repository root)
+Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited  
+License: MIT (see LICENSE file in repository root)  
 
 File:   TRingTransport.md  
 Author: Ritchie Brannan  
-Date:   15 Apr 26  
+Date:   1 Apr 2026  
 
 # TRing
 
 ## Overview
 
-`TRing<T>` is a single-producer, single-consumer transport for trivially copyable typed elements.
+`TRing<T>` is a single-producer, single-consumer transport for
+trivially copyable typed elements.
 
-It provides a fixed-capacity ring-backed transport with simple rejection on overflow or underflow. The producer writes into the ring at its local write index, the consumer reads from the ring at its local read index, and a single atomic occupied-count ledger communicates the current number of readable elements.
+It provides a fixed-capacity ring-backed transport with simple
+rejection on overflow or underflow. The producer writes into the ring
+at its local write index, the consumer reads from the ring at its local
+read index, and a single atomic occupied-count ledger communicates the
+current number of readable elements.
 
 `TRing<T>` is intended to be a compact bounded transport primitive:
 
@@ -21,7 +26,12 @@ It provides a fixed-capacity ring-backed transport with simple rejection on over
 - no overwrite-on-full behaviour
 - all-or-nothing post and read operations
 
-## Scope
+## Requirements and scope
+
+- Requires C++17 or later.
+- No exceptions are used.
+- `T` must be non-const.
+- `T` must be trivially copyable.
 
 `TRing<T>` provides:
 
@@ -31,7 +41,7 @@ It provides a fixed-capacity ring-backed transport with simple rejection on over
 - fixed-capacity bounded operation
 - rejection when insufficient writable space exists
 - rejection when insufficient readable elements exist
-- role-specific and common status / validity checks
+- role-specific and common status and validity checks
 
 `TRing<T>` does not provide:
 
@@ -64,8 +74,6 @@ Both sides observe the shared atomic:
 
 - `m_occupied_count`
 
-The ring capacity is conditioned during initialisation to an internal power-of-two capacity with a minimum floor.
-
 ## Observation model
 
 ### Producer-side observations
@@ -94,22 +102,29 @@ The consumer does not own the write index.
 
 `is_valid()` and `is_ready()` are intentionally shallow.
 
-They are designed to reflect stable structural state, not a deep concurrent proof of every transient relationship between local indices and occupancy.
+They reflect stable structural state, not a deep concurrent proof of
+every transient relationship between local indices and occupancy.
+
+`writable_count()` and `readable_count()` are observational snapshots.
+They do not reserve space or elements against later concurrent change.
 
 ## Capacity model
 
-User-supplied initialisation capacity is treated as a minimum requested capacity, not necessarily the exact internal capacity.
+User-supplied initialisation capacity is treated as a minimum requested
+capacity, not necessarily the exact internal capacity.
 
-Internal capacity is conditioned to satisfy implementation requirements:
+Initialisation rules:
 
-- minimum capacity floor
-- power-of-two normalisation
+- requests greater than `k_max_capacity` fail
+- accepted requests are rounded up to a power of 2
+- accepted requests are clamped to a minimum floor of `k_min_capacity`
 
 Once initialised, capacity does not change.
 
 ## Ledger model
 
-The shared atomic `m_occupied_count` is the only cross-thread transport ledger.
+The shared atomic `m_occupied_count` is the only cross-thread transport
+ledger.
 
 Producer behaviour:
 
@@ -125,13 +140,15 @@ This gives the transport a simple bounded SPSC model:
 
 - producer owns write progression
 - consumer owns read progression
-- occupied count is the only shared quantity used to coordinate readable vs writable space
+- occupied count is the only shared quantity used to coordinate
+  readable vs writable space
 
 ## Post semantics
 
 `post()` is all-or-nothing.
 
-A posting succeeds only if the entire requested count fits in the currently writable region of the transport.
+A post succeeds only if the entire requested count fits in the
+currently writable region of the transport.
 
 If there is insufficient writable capacity:
 
@@ -141,18 +158,25 @@ If there is insufficient writable capacity:
 
 For successful posting:
 
-- elements are copied into the ring in-order
-- wrap is handled internally if the write crosses the logical end of the ring
+- elements are copied into the ring in order
+- wrap is handled internally if the write crosses the
+  logical end of the ring
 - write index is advanced modulo capacity
 - occupied count is incremented by the posted count
 
 Bulk posting does not partially succeed.
 
+Pointer rules:
+
+- `src == nullptr` with `count != 0` fails
+- `src == nullptr` with `count == 0` succeeds if the transport is ready
+
 ## Read semantics
 
 `read()` is all-or-nothing.
 
-A read succeeds only if the entire requested count is currently readable.
+A read succeeds only if the entire requested count is currently
+readable.
 
 If there are insufficient readable elements:
 
@@ -162,20 +186,18 @@ If there are insufficient readable elements:
 
 For successful reading:
 
-- elements are copied out of the ring in-order
-- wrap is handled internally if the read crosses the logical end of the ring
+- elements are copied out of the ring in order
+- wrap is handled internally if the read crosses the
+  logical end of the ring
 - read index is advanced modulo capacity
 - occupied count is decremented by the read count
 
 Bulk reading does not partially succeed.
 
-## Writable and readable counts
+Pointer rules:
 
-`writable_count()` reports how many elements may currently be posted without overflow.
-
-`readable_count()` reports how many elements may currently be read without underflow.
-
-These functions are observational snapshots derived from the current occupied-count ledger. They are not reservation mechanisms.
+- `dst == nullptr` with `count != 0` fails
+- `dst == nullptr` with `count == 0` succeeds if the transport is ready
 
 ## Status and validity
 
@@ -214,9 +236,10 @@ Common shallow structural validity check.
 Intended meaning:
 
 - canonical empty state is coherent, or
-- initialised storage exists and occupied count lies within a valid range
+- initialised storage exists and occupied count lies within the range  
+  `[0, capacity]`
 
-This is not intended to be a deep concurrent invariant audit.
+This is not a deep concurrent invariant audit.
 
 ### `is_ready()`
 
@@ -229,11 +252,14 @@ Intended meaning:
 
 ## Setup and teardown
 
-`initialise()` requires a deallocated / not-ready instance.
+`initialise()` requires a deallocated instance.
+
+Re-initialisation without `deallocate()` fails.
 
 `deallocate()` releases owned ring storage and restores canonical empty state.
 
-Direct setup/teardown is intended for owner / registry control rather than arbitrary role-side use.
+Direct setup and teardown are intended for owner or registry control
+rather than arbitrary role-side use.
 
 ## Canonical empty state
 
@@ -269,6 +295,6 @@ While deallocated, the intended invariants are:
 
 - `TRing<T>` is not a growable queue
 - `TRing<T>` does not preserve writes by overwriting older unread data
-- `TRing<T>` does not provide retry/reservation semantics beyond explicit caller retry
-- writable and readable counts are snapshot observations, not guarantees against later concurrent change
+- `TRing<T>` does not provide retry or reservation semantics beyond
+  explicit caller retry
 - common validity is intentionally shallow
