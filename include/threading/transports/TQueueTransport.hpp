@@ -262,7 +262,7 @@ inline bool TQueue<T>::post(const T* const src, const std::uint32_t count) noexc
         }
         m_capacity = target_capacity;
 
-        //  Exchange protocol
+        //  Prepare the buffer for publication
         const std::size_t byte_count = (static_cast<std::size_t>(count) * sizeof(T));
         if ((output_buffer.capacity != m_capacity) && !output_buffer.storage.reallocate(output_buffer.size, m_capacity))
         {   //  reallocation failed, the buffer is unchanged but the post() operation cannot continue
@@ -276,9 +276,11 @@ inline bool TQueue<T>::post(const T* const src, const std::uint32_t count) noexc
         }
         std::memcpy((output_buffer.storage.data() + output_buffer.size), src, byte_count);
         output_buffer.size += count;
+
+        //  Publish and classify returned staged state
         const std::uint32_t received = m_staged_word.exchange((m_producer_output_buffer_index + (m_producer_phase ? 5u : 1u)), std::memory_order_acq_rel);
         if (received == 0u)
-        {   //  the staged buffer has been consumed, the just published buffer will be ignored by the consumer, republish rebased buffer
+        {   //  Staged publication already consumed: rebase and republish (the buffer just published will be ignored by the consumer)
             m_producer_phase = !m_producer_phase;
             if ((locked_buffer.capacity != m_capacity) && !locked_buffer.storage.reallocate(locked_buffer.size, m_capacity))
             {   //  reallocation failed, the buffer is unchanged but the post() operation cannot continue
@@ -295,7 +297,7 @@ inline bool TQueue<T>::post(const T* const src, const std::uint32_t count) noexc
             m_producer_staged_buffer_index = buffer_index_swap;
         }
         else
-        {   //  the staged buffer has not been consumed
+        {   //  Staged publication still pending: extend staged backlog
             if ((staged_buffer.capacity != m_capacity) && !staged_buffer.storage.reallocate(staged_buffer.size, m_capacity))
             {   //  reallocation failed, the buffer is unchanged but the post() operation cannot continue
                 m_allocation_failed = true;

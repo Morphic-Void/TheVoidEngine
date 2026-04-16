@@ -98,6 +98,8 @@ public:
     [[nodiscard]] std::uint32_t readable_count() const noexcept;
 
     //  Setup and teardown
+    //  initialise() requires a deallocated / not-ready instance.
+    //  deallocate() releases owned storage and must not race active role use.
     [[nodiscard]] bool initialise(const std::uint32_t capacity) noexcept;
     void deallocate() noexcept;
 
