@@ -13,9 +13,6 @@
 #ifndef DEBUG_HPP_INCLUDED
 #define DEBUG_HPP_INCLUDED
 
-namespace debug_utils
-{
-
 //==============================================================================
 //  Debug enabling definition
 //==============================================================================
@@ -27,24 +24,6 @@ namespace debug_utils
         #define MV_DEBUG_BUILD  0
     #endif
 #endif  //  #ifndef MV_DEBUG_BUILD
-
-//==============================================================================
-//  Debug configuration
-//==============================================================================
-
-bool enable_asserts(const bool enable = true) noexcept;
-
-inline bool disable_asserts() noexcept
-{
-    return enable_asserts(false);
-}
-
-//==============================================================================
-//  Debug trapping
-//==============================================================================
-
-void hard_fail() noexcept;
-bool fail_safe(const bool success) noexcept;
 
 //==============================================================================
 //  Debug macros
@@ -65,6 +44,27 @@ bool fail_safe(const bool success) noexcept;
 #define MV_FAIL_SAFE_ASSERT(x) ((x))
 
 #endif
+
+namespace debug_utils
+{
+
+//==============================================================================
+//  Debug configuration
+//==============================================================================
+
+bool enable_asserts(const bool enable = true) noexcept;
+
+inline bool disable_asserts() noexcept
+{
+    return enable_asserts(false);
+}
+
+//==============================================================================
+//  Debug trapping
+//==============================================================================
+
+void hard_fail() noexcept;
+bool fail_safe(const bool success) noexcept;
 
 }   //  namespace debug_utils
 
