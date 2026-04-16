@@ -280,7 +280,7 @@ inline bool TQueue<T>::post(const T* const src, const std::uint32_t count) noexc
         //  Publish and classify returned staged state
         const std::uint32_t received = m_staged_word.exchange((m_producer_output_buffer_index + (m_producer_phase ? 5u : 1u)), std::memory_order_acq_rel);
         if (received == 0u)
-        {   //  Staged publication already consumed: rebase and republish (the buffer just published will be ignored by the consumer)
+        {   //  Staged publication already consumed: rebase and republish
             m_producer_phase = !m_producer_phase;
             if ((locked_buffer.capacity != m_capacity) && !locked_buffer.storage.reallocate(locked_buffer.size, m_capacity))
             {   //  reallocation failed, the buffer is unchanged but the post() operation cannot continue
