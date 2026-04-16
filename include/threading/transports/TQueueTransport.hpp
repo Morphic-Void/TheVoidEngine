@@ -18,6 +18,7 @@
 #include <cstring>      //  std::memcpy
 #include <type_traits>  //  std::is_const_v, std::is_trivially_copyable_v
 
+#include "containers/TPodVector.hpp"
 #include "memory/memory_allocation.hpp"
 #include "memory/memory_primitives.hpp"
 #include "bit_utils/bit_ops.hpp"
@@ -67,6 +68,11 @@ public:
     bool post(const T* const src, const std::uint32_t count = 1u) noexcept;
     bool post(const TPodConstView<T>& src) noexcept { return post(src.data(), src.size()); }
 
+    //  Producer query
+    //  - only safe to call from the producer thread
+    //  - false does not guarantee that no reallocation would occur
+    [[nodiscard]] bool post_would_reallocate(const std::uint32_t count) const noexcept;
+
     //  Consumer operations
     //  - only safe to call from the consumer thread
     bool read(T& dst) noexcept { return read(&dst, 1u); }
@@ -89,8 +95,11 @@ public:
 
 private:
     static std::uint32_t growth_policy(const std::uint32_t capacity) noexcept;
-
+    bool growth_and_discard_policy(const std::uint32_t count, const std::uint32_t buffer_size, std::uint32_t& target_capacity, bool& discard) const noexcept;
     bool is_canonical_empty() const noexcept;
+
+    static constexpr std::uint32_t k_null_buffer_index{ 3u };
+    static constexpr std::uint32_t k_default_staged_word{ 4u };
 
     //  Configuration
     bool m_allow_discard = false;
@@ -119,11 +128,11 @@ private:
 
     //  Consumer state - Producer side must not access this
     bool m_consumer_phase = false;
-    std::uint32_t m_consumer_buffer_index = 2u;
+    std::uint32_t m_consumer_buffer_index = k_null_buffer_index;
     std::uint32_t m_consumer_read_index = 0u;
 
     //  Publication state
-    std::atomic<std::uint32_t> m_staged_word{ 0 };
+    std::atomic<std::uint32_t> m_staged_word{ k_default_staged_word };
 };
 
 //==============================================================================
@@ -185,14 +194,17 @@ inline bool TQueue<T>::consumer_is_valid() const noexcept
     {   //  uninitialised, safe to check canonical empty
         return is_canonical_empty();
     }
-    if (m_consumer_buffer_index > 2u)
+    if (m_consumer_buffer_index != k_null_buffer_index)
     {
-        return false;
-    }
-    const Buffer& buffer = m_buffers[m_consumer_buffer_index];
-    if ((buffer.storage.data() == nullptr) || (buffer.capacity < buffer.size) || (buffer.capacity < k_min_capacity) || (buffer.size < m_consumer_read_index))
-    {
-        return false;
+        if (m_consumer_buffer_index > 2u)
+        {
+            return false;
+        }
+        const Buffer & buffer = m_buffers[m_consumer_buffer_index];
+        if ((buffer.storage.data() == nullptr) || (buffer.capacity < buffer.size) || (buffer.capacity < k_min_capacity) || (buffer.size < m_consumer_read_index))
+        {
+            return false;
+        }
     }
     return m_staged_word.load(std::memory_order_relaxed) < 8u;
 }
@@ -218,27 +230,12 @@ inline bool TQueue<T>::post(const T* const src, const std::uint32_t count) noexc
 
         //  Growth and buffer discard policy
         bool discard = false;
-        if (count > (m_capacity - output_buffer.size))
-        {
-            const std::uint32_t capacity = std::min(std::max(growth_policy(output_buffer.size + count), m_capacity), m_max_capacity);
-            if (count <= (capacity - output_buffer.size))
-            {   //  buffer growth can accomodate the new posting
-                m_capacity = capacity;
-            }
-            else if (m_allow_discard)
-            {   //  buffer discard and growth can accomodate the new posting
-                if (count > m_capacity)
-                {
-                    m_capacity = std::min(std::max(growth_policy(count), m_capacity), m_max_capacity);
-                }
-                output_buffer.size = 0u;
-                discard = true;
-            }
-            else
-            {   //  buffer discarding is not allowed, discard the current posting
-                return false;
-            }
+        std::uint32_t target_capacity = m_capacity;
+        if (!growth_and_discard_policy(count, output_buffer.size, target_capacity, discard))
+        {   //  policy will not allow this posting
+            return false;
         }
+        m_capacity = target_capacity;
 
         //  Exchange protocol
         const std::size_t byte_count = (static_cast<std::size_t>(count) * sizeof(T));
@@ -248,6 +245,10 @@ inline bool TQueue<T>::post(const T* const src, const std::uint32_t count) noexc
             return MV_FAIL_SAFE_ASSERT(false);
         }
         output_buffer.capacity = m_capacity;
+        if (discard)
+        {
+            output_buffer.size = 0u;
+        }
         std::memcpy((output_buffer.storage.data() + output_buffer.size), src, byte_count);
         output_buffer.size += count;
         const std::uint32_t received = m_staged_word.exchange((m_producer_output_buffer_index + (m_producer_phase ? 5u : 1u)), std::memory_order_acq_rel);
@@ -291,6 +292,26 @@ inline bool TQueue<T>::post(const T* const src, const std::uint32_t count) noexc
 }
 
 template<typename T>
+[[nodiscard]] bool TQueue<T>::post_would_reallocate(const std::uint32_t count) const noexcept
+{
+    if (m_allocation_failed || (m_max_capacity == 0u) || (count > m_max_capacity) || (count == 0u))
+    {
+        return false;
+    }
+
+    const Buffer& output_buffer = m_buffers[m_producer_output_buffer_index];
+
+    bool discard = false;
+    std::uint32_t target_capacity = m_capacity;
+    if (!growth_and_discard_policy(count, output_buffer.size, target_capacity, discard))
+    {   //  policy will not allow this posting
+        return false;
+    }
+
+    return output_buffer.capacity != target_capacity;
+}
+
+template<typename T>
 inline bool TQueue<T>::read(T* const dst, const std::uint32_t count) noexcept
 {
     if ((m_max_capacity == 0u) || (count > m_max_capacity) || ((dst == nullptr) && (count != 0u)))
@@ -304,8 +325,14 @@ inline bool TQueue<T>::read(T* const dst, const std::uint32_t count) noexcept
         {
             return false;
         }
-        std::memcpy(dst, (m_buffers[m_consumer_buffer_index].storage.data() + m_consumer_read_index), (static_cast<std::size_t>(count) * sizeof(T)));
+        Buffer& buffer = m_buffers[m_consumer_buffer_index];
+        std::memcpy(dst, (buffer.storage.data() + m_consumer_read_index), (static_cast<std::size_t>(count) * sizeof(T)));
         m_consumer_read_index += count;
+        if (m_consumer_read_index == buffer.size)
+        {   //  buffer exhausted
+            m_consumer_buffer_index = k_null_buffer_index;
+            m_consumer_read_index = 0u;
+        }
     }
     return true;
 }
@@ -313,14 +340,21 @@ inline bool TQueue<T>::read(T* const dst, const std::uint32_t count) noexcept
 template<typename T>
 inline std::uint32_t TQueue<T>::current_readable_count() const noexcept
 {
-    const Buffer& buffer = m_buffers[m_consumer_buffer_index];
-    return (buffer.size >= m_consumer_read_index) ? (buffer.size - m_consumer_read_index) : 0u;
+    if (m_consumer_buffer_index != k_null_buffer_index)
+    {
+        const Buffer& buffer = m_buffers[m_consumer_buffer_index];
+        if (buffer.size >= m_consumer_read_index)
+        {
+            return buffer.size - m_consumer_read_index;
+        }
+    }
+    return 0u;
 }
 
 template<typename T>
 inline std::uint32_t TQueue<T>::refresh_readable_count() noexcept
 {
-    if (m_consumer_read_index == m_buffers[m_consumer_buffer_index].size)
+    if (m_consumer_buffer_index == k_null_buffer_index)
     {
         const std::uint32_t received = m_staged_word.exchange(0u, std::memory_order_acq_rel);
         const std::uint32_t received_id = received & 3u;
@@ -329,7 +363,7 @@ inline std::uint32_t TQueue<T>::refresh_readable_count() noexcept
         {
             return 0u;
         }
-        m_consumer_phase = !m_consumer_phase;
+        m_consumer_phase = !received_phase;
         m_consumer_buffer_index = received_id - 1u;
         m_consumer_read_index = 0u;
     }
@@ -364,9 +398,10 @@ inline bool TQueue<T>::initialise_fixed(const std::uint32_t capacity, const bool
     m_producer_phase = m_consumer_phase = false;
     m_producer_output_buffer_index = 0u;
     m_producer_staged_buffer_index = 1u;
-    m_producer_locked_buffer_index = m_consumer_buffer_index = 2u;
+    m_producer_locked_buffer_index = 2u;
+    m_consumer_buffer_index = k_null_buffer_index;
     m_consumer_read_index = 0u;
-    m_staged_word.store(0u, std::memory_order_release);
+    m_staged_word.store(k_default_staged_word, std::memory_order_release);
     return true;
 }
 
@@ -403,21 +438,49 @@ inline void TQueue<T>::deallocate() noexcept
     m_producer_phase = m_consumer_phase = false;
     m_producer_output_buffer_index = 0u;
     m_producer_staged_buffer_index = 1u;
-    m_producer_locked_buffer_index = m_consumer_buffer_index = 2u;
+    m_producer_locked_buffer_index = 2u;
+    m_consumer_buffer_index = k_null_buffer_index;
     m_consumer_read_index = 0u;
-    m_staged_word.store(0u, std::memory_order_relaxed);
+    m_staged_word.store(k_default_staged_word, std::memory_order_relaxed);
 }
 
 template<typename T>
 inline bool TQueue<T>::validate() const noexcept
 {
-    return producer_is_valid() && consumer_is_valid() && (m_producer_locked_buffer_index == m_consumer_buffer_index);
+    return producer_is_valid() && consumer_is_valid() && ((m_consumer_buffer_index == m_producer_locked_buffer_index) || (m_consumer_buffer_index == k_null_buffer_index));
 }
 
 template<typename T>
 inline std::uint32_t TQueue<T>::growth_policy(const std::uint32_t capacity) noexcept
 {
     return static_cast<std::uint32_t>(memory::vector_growth_policy(static_cast<std::size_t>(capacity)));
+}
+
+template<typename T>
+inline bool TQueue<T>::growth_and_discard_policy(const std::uint32_t count, const std::uint32_t buffer_size, std::uint32_t& target_capacity, bool& discard) const noexcept
+{
+    discard = false;
+    target_capacity = m_capacity;
+    if (count <= (m_capacity - buffer_size))
+    {
+        return true;
+    }
+    const std::uint32_t capacity = std::min(std::max(growth_policy(buffer_size + count), m_capacity), m_max_capacity);
+    if (count <= (capacity - buffer_size))
+    {   //  buffer growth can accomodate the new posting
+        target_capacity = capacity;
+        return true;
+    }
+    if (m_allow_discard)
+    {   //  buffer discard and growth can accomodate the new posting
+        if (count > m_capacity)
+        {
+            target_capacity = std::min(std::max(growth_policy(count), m_capacity), m_max_capacity);
+        }
+        discard = true;
+        return true;
+    }
+    return false;
 }
 
 template<typename T>
@@ -431,7 +494,7 @@ inline bool TQueue<T>::is_canonical_empty() const noexcept
         (m_producer_output_buffer_index != 0u) ||
         (m_producer_staged_buffer_index != 1u) ||
         (m_producer_locked_buffer_index != 2u) ||
-        (m_consumer_buffer_index != 2u) ||
+        (m_consumer_buffer_index != k_null_buffer_index) ||
         (m_consumer_read_index != 0u))
     {
         return false;
@@ -444,7 +507,7 @@ inline bool TQueue<T>::is_canonical_empty() const noexcept
             return false;
         }
     }
-    return m_staged_word.load(std::memory_order_relaxed) == 0u;
+    return m_staged_word.load(std::memory_order_relaxed) == k_default_staged_word;
 }
 
 }   //  namespace threading::transports

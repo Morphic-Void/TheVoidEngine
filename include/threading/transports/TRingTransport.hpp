@@ -18,6 +18,7 @@
 #include <cstring>      //  std::memcpy
 #include <type_traits>  //  std::is_const_v, std::is_trivially_copyable_v
 
+#include "containers/TPodVector.hpp"
 #include "memory/memory_allocation.hpp"
 #include "memory/memory_primitives.hpp"
 #include "bit_utils/bit_ops.hpp"

@@ -1,23 +1,22 @@
 
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
-// 
-// TUnorderedSlots_test_harness.cpp
 //
-// Standalone configurable test harness for TUnorderedSlots<TIndex>.
+//  TUnorderedSlots_test_harness.cpp
 //
-// Build (Clang/GCC):
-//   clang++ -std=c++14 -O0 -g TUnorderedSlots_test_harness.cpp -o tun_test
-//   g++     -std=c++14 -O0 -g TUnorderedSlots_test_harness.cpp -o tun_test
+//  Standalone configurable test harness for TUnorderedSlots<TIndex>.
 //
-// Build (MSVC):
-//   cl /std:c++14 /EHsc /O0 /Zi TUnorderedSlots_test_harness.cpp
+//  Build (Clang/GCC):
+//    clang++ -std=c++14 -O0 -g TUnorderedSlots_test_harness.cpp -o tun_test
+//    g++     -std=c++14 -O0 -g TUnorderedSlots_test_harness.cpp -o tun_test
 //
-// Run:
-//   ./tun_test --fast
-//   ./tun_test --soak
-//   ./tun_test --fuzz --seed=123 --steps=20000
+//  Build (MSVC):
+//    cl /std:c++14 /EHsc /O0 /Zi TUnorderedSlots_test_harness.cpp
 //
+//  Run:
+//    ./tun_test --fast
+//    ./tun_test --soak
+//    ./tun_test --fuzz --seed=123 --steps=20000
 
 #include <cstdint>
 #include <cstdlib>

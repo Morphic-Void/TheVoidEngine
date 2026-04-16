@@ -165,6 +165,12 @@
     <ClInclude Include="include\threading\transports\TQueueTransport.hpp">
       <Filter>include\threading\transports</Filter>
     </ClInclude>
+    <ClInclude Include="include\tests\TQueueTransport_test_suite.hpp">
+      <Filter>include\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tests\TRingTransport_test_suite.hpp">
+      <Filter>include\tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\io\file\file.cpp">
@@ -196,6 +202,12 @@
     </ClCompile>
     <ClCompile Include="src\debug\debug.cpp">
       <Filter>src\debug</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests\TQueueTransport_test_suite.cpp">
+      <Filter>src\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests\TRingTransport_test_suite.cpp">
+      <Filter>src\tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

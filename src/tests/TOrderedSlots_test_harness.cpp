@@ -1,23 +1,24 @@
+
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
 // 
-// TOrderedSlots_test_harness_UPDATED_rank_index.cpp
+//  TOrderedSlots_test_harness.cpp
 //
-// Update summary vs prior harness:
-// - lexical_index -> rank_index
-// - lex_index_of -> rank_index_of
-// - find_by_lexical_index -> find_by_rank_index
-// - sort_and_pack no longer takes preserve flag:
-//     previous preserve_loose_index_order=true  ==> call rebuild_loose_in_index_order() then sort_and_pack()
+//  Update summary vs prior harness:
+//  - lexical_index -> rank_index
+//  - lex_index_of -> rank_index_of
+//  - find_by_lexical_index -> find_by_rank_index
+//  - sort_and_pack no longer takes preserve flag:
+//      previous preserve_loose_index_order=true  ==> call rebuild_loose_in_index_order() then sort_and_pack()
 //
-// Notes:
-// - This harness still uses STL freely (debug harness).
-// - Updated for full-domain rank-index contract:
-//     lexed  : [0 .. lexed_count)
-//     loose  : [lexed_count .. occupied_count)
-//     empty  : [occupied_count .. capacity)
-// - For loose visits, rank_index is in [lexed_count .. lexed_count+loose_count).
-// - For empty visits, rank_index is in [occupied_count .. capacity).
+//  Notes:
+//  - This harness still uses STL freely (debug harness).
+//  - Updated for full-domain rank-index contract:
+//      lexed  : [0 .. lexed_count)
+//      loose  : [lexed_count .. occupied_count)
+//      empty  : [occupied_count .. capacity)
+//  - For loose visits, rank_index is in [lexed_count .. lexed_count+loose_count).
+//  - For empty visits, rank_index is in [occupied_count .. capacity).
 
 #include <cstdint>
 #include <cstdlib>

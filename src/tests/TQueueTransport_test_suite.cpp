@@ -1,0 +1,573 @@
+
+//  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
+//  License: MIT (see LICENSE file in repository root)
+//
+//  TQueueTransport_test_suite.cpp
+//
+//  Standalone test suite for threading::transports::TQueue<T>.
+
+#include <array>
+#include <string>
+#include <utility>
+#include <vector>
+#include <cstdint>
+#include <cstdlib>
+#include <iostream>
+#include <string_view>
+
+#include "threading/transports/TQueueTransport.hpp"
+#include "tests/TQueueTransport_test_suite.hpp"
+#include "memory/memory_allocation.hpp"
+#include "debug/debug.hpp"
+
+using threading::transports::TQueue;
+
+namespace tests
+{
+
+struct TTestContext
+{
+    std::uint32_t passed = 0u;
+    std::uint32_t failed = 0u;
+
+    void fail(const char* const expr,
+        const char* const file,
+        const int line,
+        const std::string& message = {},
+        const char* const case_name = nullptr)
+    {
+        ++failed;
+        std::cerr << file << '(' << line << "): FAIL: ";
+        if ((case_name != nullptr) && (case_name[0] != '\0'))
+        {
+            std::cerr << '[' << case_name << "] ";
+        }
+        std::cerr << expr;
+        if (!message.empty())
+        {
+            std::cerr << " : " << message;
+        }
+        std::cerr << '\n';
+    }
+
+    void pass() noexcept
+    {
+        ++passed;
+    }
+
+    [[nodiscard]] int exit_code() const noexcept
+    {
+        return (failed == 0u) ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+};
+
+#define TEST_EXPECT_TRUE(ctx, expr) \
+    do { if (expr) { (ctx).pass(); } else { (ctx).fail(#expr, __FILE__, __LINE__); } } while (false)
+
+#define TEST_EXPECT_FALSE(ctx, expr) \
+    do { if (!(expr)) { (ctx).pass(); } else { (ctx).fail("!(" #expr ")", __FILE__, __LINE__); } } while (false)
+
+#define TEST_EXPECT_EQ(ctx, lhs, rhs) \
+    do { \
+        const auto test_lhs_value = (lhs); \
+        const auto test_rhs_value = (rhs); \
+        if (test_lhs_value == test_rhs_value) { \
+            (ctx).pass(); \
+        } else { \
+            (ctx).fail(#lhs " == " #rhs, __FILE__, __LINE__); \
+        } \
+    } while (false)
+
+#define TEST_CASE_EXPECT_TRUE(ctx, case_name, expr) \
+    do { if (expr) { (ctx).pass(); } else { (ctx).fail(#expr, __FILE__, __LINE__, {}, (case_name)); } } while (false)
+
+#define TEST_CASE_EXPECT_FALSE(ctx, case_name, expr) \
+    do { if (!(expr)) { (ctx).pass(); } else { (ctx).fail("!(" #expr ")", __FILE__, __LINE__, {}, (case_name)); } } while (false)
+
+#define TEST_CASE_EXPECT_EQ(ctx, case_name, lhs, rhs) \
+    do { \
+        const auto test_lhs_value = (lhs); \
+        const auto test_rhs_value = (rhs); \
+        if (test_lhs_value == test_rhs_value) { \
+            (ctx).pass(); \
+        } else { \
+            (ctx).fail(#lhs " == " #rhs, __FILE__, __LINE__, {}, (case_name)); \
+        } \
+    } while (false)
+
+inline std::string make_repeated_string(const char c, const std::uint32_t count)
+{
+    return std::string(static_cast<std::size_t>(count), c);
+}
+
+template<typename TTransport>
+bool post_string(TTransport& transport, const std::string_view text) noexcept
+{
+    return transport.post(text.data(), static_cast<std::uint32_t>(text.size()));
+}
+
+template<typename TTransport>
+bool read_exact_string(TTransport& transport, std::string& out, const std::uint32_t count)
+{
+    out.resize(static_cast<std::size_t>(count));
+    if (!transport.read(out.data(), count))
+    {
+        out.clear();
+        return false;
+    }
+    return true;
+}
+
+template<typename TRing>
+std::string drain_ring(TRing& ring)
+{
+    const std::uint32_t count = ring.readable_count();
+    std::string result;
+    result.resize(static_cast<std::size_t>(count));
+    if ((count != 0u) && !ring.read(result.data(), count))
+    {
+        return {};
+    }
+    return result;
+}
+
+template<typename TQueue>
+std::string drain_queue(TQueue& queue)
+{
+    std::string result;
+
+    for (;;)
+    {
+        const std::uint32_t available = queue.refresh_readable_count();
+        if (available == 0u)
+        {
+            break;
+        }
+
+        const std::size_t old_size = result.size();
+        result.resize(old_size + static_cast<std::size_t>(available));
+
+        if (!queue.read(result.data() + old_size, available))
+        {
+            return {};
+        }
+    }
+
+    return result;
+}
+
+inline void print_summary(const char* const suite_name, const TTestContext& ctx)
+{
+    std::cout
+        << suite_name
+        << ": passed=" << ctx.passed
+        << " failed=" << ctx.failed
+        << '\n';
+}
+
+struct TStep
+{
+    std::uint32_t count = 0u;
+    char fill = '\0';
+    bool expect_resize = false;
+};
+
+std::string make_payload(const TStep& step)
+{
+    return make_repeated_string(step.fill, step.count);
+}
+
+void test_queue_uninitialised_state(TTestContext& ctx)
+{
+    TQueue<char> queue;
+
+    TEST_EXPECT_TRUE(ctx, queue.producer_is_valid());
+    TEST_EXPECT_TRUE(ctx, queue.consumer_is_valid());
+    TEST_EXPECT_FALSE(ctx, queue.producer_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.consumer_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.producer_poisoned());
+    TEST_EXPECT_TRUE(ctx, queue.validate());
+
+    TEST_EXPECT_EQ(ctx, queue.current_readable_count(), 0u);
+    TEST_EXPECT_EQ(ctx, queue.refresh_readable_count(), 0u);
+
+    TEST_EXPECT_FALSE(ctx, queue.post(nullptr, 0u)); // not ready
+    TEST_EXPECT_FALSE(ctx, queue.read(nullptr, 0u)); // not ready
+}
+
+void test_queue_initialise_rejection_and_conditioning(TTestContext& ctx)
+{
+    {
+        TQueue<char> queue;
+        TEST_EXPECT_FALSE(ctx, queue.initialise_fixed(TQueue<char>::k_max_capacity + 1u));
+        TEST_EXPECT_FALSE(ctx, queue.producer_is_ready());
+        TEST_EXPECT_TRUE(ctx, queue.validate());
+    }
+
+    {
+        TQueue<char> queue;
+        TEST_EXPECT_FALSE(ctx, queue.initialise_growable(128u, 64u));
+        TEST_EXPECT_FALSE(ctx, queue.producer_is_ready());
+        TEST_EXPECT_TRUE(ctx, queue.validate());
+    }
+
+    {
+        TQueue<char> queue;
+        TEST_EXPECT_TRUE(ctx, queue.initialise_fixed(0u, false));
+        TEST_EXPECT_TRUE(ctx, queue.producer_is_ready());
+        TEST_EXPECT_TRUE(ctx, queue.consumer_is_ready());
+        TEST_EXPECT_TRUE(ctx, queue.validate());
+
+        TEST_EXPECT_FALSE(ctx, queue.initialise_fixed(32u, false));
+    }
+}
+
+void test_queue_initial_allocation_failure(TTestContext& ctx)
+{
+    TQueue<char> queue;
+
+    (void)memory::enable_allocation(false);
+    TEST_EXPECT_FALSE(ctx, queue.initialise_fixed(32u, false));
+    (void)memory::enable_allocation(true);
+
+    TEST_EXPECT_FALSE(ctx, queue.producer_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.consumer_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.producer_poisoned());
+    TEST_EXPECT_TRUE(ctx, queue.validate());
+}
+
+void test_queue_zero_and_null_behaviour(TTestContext& ctx)
+{
+    TQueue<char> queue;
+    TEST_EXPECT_TRUE(ctx, queue.initialise_fixed(32u, false));
+
+    TEST_EXPECT_TRUE(ctx, queue.post(nullptr, 0u));
+    TEST_EXPECT_TRUE(ctx, queue.read(nullptr, 0u));
+
+    TEST_EXPECT_FALSE(ctx, queue.post(nullptr, 1u));
+    TEST_EXPECT_FALSE(ctx, queue.read(nullptr, 1u));
+}
+
+void test_queue_basic_publication_and_read(TTestContext& ctx)
+{
+    TQueue<char> queue;
+    TEST_EXPECT_TRUE(ctx, queue.initialise_fixed(32u, false));
+
+    TEST_EXPECT_TRUE(ctx, post_string(queue, "HELLO"));
+    TEST_EXPECT_EQ(ctx, queue.current_readable_count(), 0u);
+    TEST_EXPECT_EQ(ctx, queue.refresh_readable_count(), 5u);
+    TEST_EXPECT_EQ(ctx, queue.current_readable_count(), 5u);
+
+    std::string out;
+    TEST_EXPECT_TRUE(ctx, read_exact_string(queue, out, 5u));
+    TEST_EXPECT_EQ(ctx, out, std::string("HELLO"));
+    TEST_EXPECT_EQ(ctx, queue.current_readable_count(), 0u);
+    TEST_EXPECT_EQ(ctx, queue.refresh_readable_count(), 0u);
+
+    TEST_EXPECT_TRUE(ctx, queue.validate());
+}
+
+void test_queue_multiple_posts_before_read(TTestContext& ctx)
+{
+    TQueue<char> queue;
+    TEST_EXPECT_TRUE(ctx, queue.initialise_fixed(32u, false));
+
+    TEST_EXPECT_TRUE(ctx, post_string(queue, "ABC"));
+    TEST_EXPECT_TRUE(ctx, post_string(queue, "DEF"));
+    TEST_EXPECT_TRUE(ctx, post_string(queue, "GHI"));
+
+    TEST_EXPECT_EQ(ctx, drain_queue(queue), std::string("ABCDEFGHI"));
+    TEST_EXPECT_TRUE(ctx, queue.validate());
+}
+
+void test_queue_fixed_no_discard_rejects_overflow(TTestContext& ctx)
+{
+    TQueue<char> queue;
+    TEST_EXPECT_TRUE(ctx, queue.initialise_fixed(32u, false));
+
+    TEST_EXPECT_TRUE(ctx, post_string(queue, make_repeated_string('A', 24u)));
+    TEST_EXPECT_FALSE(ctx, post_string(queue, make_repeated_string('B', 16u)));
+
+    TEST_EXPECT_FALSE(ctx, queue.producer_poisoned());
+    TEST_EXPECT_TRUE(ctx, queue.producer_is_ready());
+    TEST_EXPECT_TRUE(ctx, queue.validate());
+
+    TEST_EXPECT_EQ(ctx, drain_queue(queue), make_repeated_string('A', 24u));
+}
+
+void test_queue_fixed_discard_replaces_buffered_data(TTestContext& ctx)
+{
+    TQueue<char> queue;
+    TEST_EXPECT_TRUE(ctx, queue.initialise_fixed(32u, true));
+
+    TEST_EXPECT_TRUE(ctx, post_string(queue, "ABCDEFGHIJKLMNO"));
+    TEST_EXPECT_TRUE(ctx, post_string(queue, "PQRSTUVWXYZ123456"));
+    TEST_EXPECT_TRUE(ctx, post_string(queue, make_repeated_string('X', 20u)));
+
+    const std::string drained = drain_queue(queue);
+    TEST_EXPECT_EQ(ctx, drained, make_repeated_string('X', 20u));
+    TEST_EXPECT_TRUE(ctx, queue.validate());
+}
+
+//  Reallocation test functions.
+//
+//  These use the post_would_reallocate(count) function only as a positive predictor
+//  for allocation-failure injection. A true result identifies a known producer-side
+//  reallocation pressure point. A false result is treated as inconclusive and does
+//  not imply that no reallocation could occur on the full post path.
+
+struct TPositiveReallocationPoint
+{
+    std::size_t step_index = 0u;
+    std::uint32_t ordinal = 0u;
+};
+
+std::vector<TPositiveReallocationPoint> find_positive_reallocation_points(const std::vector<TStep>& steps)
+{
+    constexpr std::uint32_t requested_initial_capacity = 8u;
+    constexpr std::uint32_t max_capacity = 128u;
+
+    std::vector<TPositiveReallocationPoint> points;
+
+    TQueue<char> queue;
+    if (!queue.initialise_growable(requested_initial_capacity, max_capacity))
+    {
+        return points;
+    }
+
+    for (std::size_t i = 0u; i < steps.size(); ++i)
+    {
+        const TStep& step = steps[i];
+
+        if (queue.post_would_reallocate(step.count))
+        {
+            points.push_back(TPositiveReallocationPoint{ i, static_cast<std::uint32_t>(points.size() + 1u) });
+        }
+
+        const std::string payload = make_payload(step);
+        if (!queue.post(payload.data(), step.count))
+        {
+            break;
+        }
+    }
+
+    return points;
+}
+
+void run_queue_resize_success_script(tests::TTestContext& ctx,
+    const std::vector<TStep>& steps,
+    const char* const case_name)
+{
+    constexpr std::uint32_t requested_initial_capacity = 8u;
+    constexpr std::uint32_t max_capacity = 128u;
+
+    TQueue<char> queue;
+    TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.initialise_growable(requested_initial_capacity, max_capacity));
+
+    std::string expected;
+    std::uint32_t positive_reallocation_count = 0u;
+
+    for (const TStep& step : steps)
+    {
+        if (queue.post_would_reallocate(step.count))
+        {
+            ++positive_reallocation_count;
+        }
+
+        const std::string payload = make_payload(step);
+        const bool accepted = queue.post(payload.data(), step.count);
+
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, accepted);
+        TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.producer_poisoned());
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.producer_is_ready());
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.consumer_is_ready());
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.validate());
+
+        if (!accepted)
+        {
+            return;
+        }
+
+        expected += payload;
+    }
+
+    TEST_CASE_EXPECT_EQ(ctx, case_name, tests::drain_queue(queue), expected);
+    TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.validate());
+
+    //  Optional sanity check: cases named with R* should have exercised at least one positive reallocation point.
+    TEST_CASE_EXPECT_TRUE(ctx, case_name, positive_reallocation_count > 0u);
+}
+
+void run_queue_resize_failure_script(tests::TTestContext& ctx,
+    const std::vector<TStep>& steps,
+    const char* const case_name,
+    const std::uint32_t fail_point_ordinal)
+{
+    constexpr std::uint32_t requested_initial_capacity = 8u;
+    constexpr std::uint32_t max_capacity = 128u;
+
+    TQueue<char> queue;
+    TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.initialise_growable(requested_initial_capacity, max_capacity));
+
+    std::uint32_t current_positive_point = 0u;
+    std::string expected_before_failure;
+
+    for (std::size_t i = 0u; i < steps.size(); ++i)
+    {
+        const TStep& step = steps[i];
+        const std::string payload = make_payload(step);
+
+        const bool positive_reallocation = queue.post_would_reallocate(step.count);
+        if (positive_reallocation)
+        {
+            ++current_positive_point;
+        }
+
+        if (positive_reallocation && (current_positive_point == fail_point_ordinal))
+        {
+            (void)memory::enable_allocation(false);
+            TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.post(payload.data(), step.count));
+            (void)memory::enable_allocation(true);
+
+            TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.producer_poisoned());
+            TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.producer_is_ready());
+            TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.consumer_is_ready());
+            TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.producer_is_valid());
+            TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.consumer_is_valid());
+
+            TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.post("Z", 1u));
+            TEST_CASE_EXPECT_EQ(ctx, case_name, tests::drain_queue(queue), expected_before_failure);
+            return;
+        }
+
+        const bool accepted = queue.post(payload.data(), step.count);
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, accepted);
+        TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.producer_poisoned());
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.producer_is_ready());
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.consumer_is_ready());
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.validate());
+
+        if (!accepted)
+        {
+            return;
+        }
+
+        expected_before_failure += payload;
+    }
+
+    TEST_CASE_EXPECT_TRUE(ctx, case_name, false);
+}
+
+void test_queue_growable_resize_matrix(tests::TTestContext& ctx)
+{
+
+    //  Success-path resize scripts must remain logically admissible with allocation
+    //  enabled. In particular, cumulative unread payload for these no-read,
+    //  no-discard cases must not exceed max_capacity, otherwise post() failure is an
+    //  ordinary capacity rejection rather than a resize/allocation failure.
+
+    const std::vector<std::pair<const char*, std::vector<TStep>>> cases =
+    {
+        { "R1",
+            { { 24u, 'a', false }, { 12u, 'b', true } } },
+
+        { "R1_N1_R2",
+            { { 24u, 'a', false }, { 12u, 'b', true }, { 1u, 'c', false }, { 28u, 'd', true } } },
+
+        { "R1_N2_R2",
+            { { 24u, 'a', false }, { 12u, 'b', true }, { 1u, 'c', false }, { 1u, 'd', false }, { 27u, 'e', true } } },
+
+        { "R1_N3_R2",
+            { { 24u, 'a', false }, { 12u, 'b', true }, { 1u, 'c', false }, { 1u, 'd', false }, { 1u, 'e', false }, { 26u, 'f', true } } },
+
+        { "R1_R2",
+            { { 24u, 'a', false }, { 12u, 'b', true }, { 29u, 'c', true } } },
+
+            //  Keep cumulative total <= 128 for success-path validity.
+            { "R1_R2_R3",
+                { { 24u, 'a', false }, { 12u, 'b', true }, { 29u, 'c', true }, { 63u, 'd', true } } },
+
+            { "R1_N1_R2_R3",
+                { { 24u, 'a', false }, { 12u, 'b', true }, { 1u, 'c', false }, { 28u, 'd', true }, { 63u, 'e', true } } },
+    };
+
+    for (const auto& test_case : cases)
+    {
+        run_queue_resize_success_script(ctx, test_case.second, test_case.first);
+
+        const std::vector<TPositiveReallocationPoint> points = find_positive_reallocation_points(test_case.second);
+        for (std::uint32_t fail_point_ordinal = 1u;
+            fail_point_ordinal <= static_cast<std::uint32_t>(points.size());
+            ++fail_point_ordinal)
+        {
+            run_queue_resize_failure_script(ctx, test_case.second, test_case.first, fail_point_ordinal);
+        }
+    }
+}
+
+void test_queue_consumer_can_drain_after_poison(tests::TTestContext& ctx)
+{
+    TQueue<char> queue;
+    TEST_EXPECT_TRUE(ctx, queue.initialise_growable(8u, 128u));
+
+    TEST_EXPECT_TRUE(ctx, tests::post_string(queue, "ABCDEF"));
+
+    const std::string growth_payload = tests::make_repeated_string('G', 27u);
+    TEST_EXPECT_TRUE(ctx, queue.post_would_reallocate(static_cast<std::uint32_t>(growth_payload.size())));
+
+    (void)memory::enable_allocation(false);
+    TEST_EXPECT_FALSE(ctx, queue.post(growth_payload.data(), static_cast<std::uint32_t>(growth_payload.size())));
+    (void)memory::enable_allocation(true);
+
+    TEST_EXPECT_TRUE(ctx, queue.producer_poisoned());
+    TEST_EXPECT_EQ(ctx, tests::drain_queue(queue), std::string("ABCDEF"));
+    TEST_EXPECT_EQ(ctx, queue.refresh_readable_count(), 0u);
+}
+
+void test_queue_deallocate_restores_empty(TTestContext& ctx)
+{
+    TQueue<char> queue;
+    TEST_EXPECT_TRUE(ctx, queue.initialise_growable(8u, 64u));
+    TEST_EXPECT_TRUE(ctx, post_string(queue, "DATA"));
+
+    queue.deallocate();
+
+    TEST_EXPECT_TRUE(ctx, queue.producer_is_valid());
+    TEST_EXPECT_TRUE(ctx, queue.consumer_is_valid());
+    TEST_EXPECT_FALSE(ctx, queue.producer_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.consumer_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.producer_poisoned());
+    TEST_EXPECT_TRUE(ctx, queue.validate());
+    TEST_EXPECT_EQ(ctx, queue.current_readable_count(), 0u);
+    TEST_EXPECT_EQ(ctx, queue.refresh_readable_count(), 0u);
+}
+
+int test_queue_transport()
+{
+    TTestContext ctx;
+
+    test_queue_uninitialised_state(ctx);
+    test_queue_initialise_rejection_and_conditioning(ctx);
+    test_queue_initial_allocation_failure(ctx);
+    test_queue_zero_and_null_behaviour(ctx);
+    test_queue_basic_publication_and_read(ctx);
+    test_queue_multiple_posts_before_read(ctx);
+    test_queue_fixed_no_discard_rejects_overflow(ctx);
+    test_queue_fixed_discard_replaces_buffered_data(ctx);
+    test_queue_growable_resize_matrix(ctx);
+    test_queue_consumer_can_drain_after_poison(ctx);
+    test_queue_deallocate_restores_empty(ctx);
+
+    print_summary("TQueueTransport", ctx);
+    return ctx.exit_code();
+}
+
+}   //  namespace tests
+
+int run_queue_transport_tests()
+{
+    debug_utils::disable_asserts();
+    int result = tests::test_queue_transport();
+    debug_utils::enable_asserts();
+    return result;
+}

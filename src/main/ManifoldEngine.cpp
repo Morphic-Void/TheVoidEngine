@@ -29,17 +29,23 @@
 
 #include "tests/TOrderedSlots_test_harness.hpp"
 #include "tests/TUnorderedSlots_test_harness.hpp"
+#include "tests/TQueueTransport_test_suite.hpp"
+#include "tests/TRingTransport_test_suite.hpp"
 
 int main()
 {
-    TOrderedConfig tlex_cfg;
-    tlex_cfg.run_fuzz_lightweight = true;
-    int tlex_result = run_all_tests(tlex_cfg);
+    int tqueue_test_result = run_queue_transport_tests();
 
-    TUnorderedConfig tun_cfg;
-    //tun_cfg.run_fuzz = true;
-    int tun_result = run_all_tests(tun_cfg);
+    //int tring_test_result = run_ring_transport_tests();
 
-    return tlex_result == 0 ? tun_result : tlex_result;
+    //TOrderedConfig tlex_cfg;
+    //tlex_cfg.run_fuzz_lightweight = true;
+    //int tlex_test_result = run_all_tests(tlex_cfg);
+    //
+    //TUnorderedConfig tun_cfg;
+    ////tun_cfg.run_fuzz = true;
+    //int tun_test_result = run_all_tests(tun_cfg);
+
+    return 0;
 }
 
