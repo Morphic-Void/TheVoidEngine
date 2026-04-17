@@ -45,6 +45,7 @@ CByteBuffer loadFile(const char* const utf8_path, const std::size_t pad) noexcep
                         {
                             std::memset((data + file_size), 0, clear_size);
                         }
+                        (void)buffer.set_size(size);
                         success = true;
                     }
                 }

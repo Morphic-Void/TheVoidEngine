@@ -243,6 +243,18 @@
     <None Include="docs\threading\transports\TRingTransport.md">
       <Filter>docs\threading\transports</Filter>
     </None>
+    <None Include="docs\architectural-principles.md">
+      <Filter>docs</Filter>
+    </None>
+    <None Include="docs\engineering-aphorisms.md">
+      <Filter>docs</Filter>
+    </None>
+    <None Include="docs\engineering-principles.md">
+      <Filter>docs</Filter>
+    </None>
+    <None Include="docs\codebase-model.md">
+      <Filter>docs</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="LICENSE.txt" />

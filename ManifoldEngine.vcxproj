@@ -192,6 +192,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
+    <None Include="docs\architectural-principles.md" />
+    <None Include="docs\codebase-model.md" />
     <None Include="docs\containers\ByteBuffers.md" />
     <None Include="docs\containers\slots\TOrderedSlots.md" />
     <None Include="docs\containers\slots\TUnorderedSlots.md" />
@@ -200,6 +202,8 @@
     <None Include="docs\containers\TPodVector.md" />
     <None Include="docs\containers\TStableStorage.md" />
     <None Include="docs\containers\TUnorderedCollection.md" />
+    <None Include="docs\engineering-aphorisms.md" />
+    <None Include="docs\engineering-principles.md" />
     <None Include="docs\threading\transports\TQueueTransport.md" />
     <None Include="docs\threading\transports\TRingTransport.md" />
     <None Include="README.md" />
