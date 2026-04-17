@@ -98,7 +98,7 @@ const T& pod_vector_empty_const_ref() noexcept
 
 //==============================================================================
 //  TPodVector<T>
-//  Owning unique vector-like container over CByteBuffer.
+//  Owning unique vector-like container.
 //==============================================================================
 
 template<typename T>

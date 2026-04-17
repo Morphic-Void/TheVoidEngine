@@ -320,7 +320,7 @@ public:
     //  Capacity management (state unchanged on failure)
     [[nodiscard]] bool allocate(const std::size_t size, const bool zero = true) noexcept;
     [[nodiscard]] bool reallocate(const std::size_t old_size, const std::size_t new_size, const bool zero_extra = true) noexcept;
-    [[nodiscard]] bool clone(const TMemoryToken<T>& src, const std::size_t size) const noexcept;
+    [[nodiscard]] bool clone(const TMemoryToken<T>& src, const std::size_t size) noexcept;
     void deallocate() noexcept;
 
     //  Constants
@@ -796,7 +796,7 @@ inline void TMemoryToken<T>::deallocate() noexcept
 }
 
 template<typename T>
-inline bool TMemoryToken<T>::clone(const TMemoryToken<T>& src, const std::size_t size) const noexcept
+inline bool TMemoryToken<T>::clone(const TMemoryToken<T>& src, const std::size_t size) noexcept
 {
     if (size == 0u)
     {

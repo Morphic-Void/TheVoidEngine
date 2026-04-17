@@ -36,15 +36,15 @@ int main()
 {
     int tqueue_test_result = run_queue_transport_tests();
 
-    //int tring_test_result = run_ring_transport_tests();
+    int tring_test_result = run_ring_transport_tests();
 
-    //TOrderedConfig tlex_cfg;
-    //tlex_cfg.run_fuzz_lightweight = true;
-    //int tlex_test_result = run_all_tests(tlex_cfg);
-    //
-    //TUnorderedConfig tun_cfg;
-    ////tun_cfg.run_fuzz = true;
-    //int tun_test_result = run_all_tests(tun_cfg);
+    TOrderedConfig tlex_cfg;
+    tlex_cfg.run_fuzz_lightweight = true;
+    int tlex_test_result = run_all_tests(tlex_cfg);
+ 
+    TUnorderedConfig tun_cfg;
+    //tun_cfg.run_fuzz = true;
+    int tun_test_result = run_all_tests(tun_cfg);
 
     return 0;
 }

@@ -275,11 +275,6 @@ inline void t_deallocate(T* const ptr) noexcept
     byte_deallocate(static_cast<void*>(ptr), t_default_align<T>());
 }
 
-//==============================================================================
-//  Allocator interface definition
-//==============================================================================
-
-
 }   //  namespace memory
 
 #endif  //  #ifndef MEMORY_ALLOCATION_HPP_INCLUDED
