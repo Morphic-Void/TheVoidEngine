@@ -85,6 +85,18 @@
     <Filter Include="src\debug">
       <UniqueIdentifier>{0489083b-4649-4805-b4af-339674c8de2e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\threading\transports\core">
+      <UniqueIdentifier>{3cb79eb8-e06b-4591-9e9e-e50945b047a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\threading\transports\endpoints">
+      <UniqueIdentifier>{595e9931-d448-42a4-990a-b088ff20fcdb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\threading\transports\interfaces">
+      <UniqueIdentifier>{a3c863ad-1a01-4408-99e5-ee47e678bad3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\threading\transports\bundles">
+      <UniqueIdentifier>{e9c9d0ab-1069-4670-84e7-9f61c1f3039a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\containers\ByteBuffers.hpp">
@@ -159,17 +171,35 @@
     <ClInclude Include="include\types\fp16data_t.hpp">
       <Filter>include\types</Filter>
     </ClInclude>
-    <ClInclude Include="include\threading\transports\TRingTransport.hpp">
-      <Filter>include\threading\transports</Filter>
-    </ClInclude>
-    <ClInclude Include="include\threading\transports\TQueueTransport.hpp">
-      <Filter>include\threading\transports</Filter>
-    </ClInclude>
     <ClInclude Include="include\tests\TQueueTransport_test_suite.hpp">
       <Filter>include\tests</Filter>
     </ClInclude>
     <ClInclude Include="include\tests\TRingTransport_test_suite.hpp">
       <Filter>include\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\transports\bundles\TQueueBundle.hpp">
+      <Filter>include\threading\transports\bundles</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\transports\bundles\TRingBundle.hpp">
+      <Filter>include\threading\transports\bundles</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\transports\core\TQueueTransport.hpp">
+      <Filter>include\threading\transports\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\transports\core\TRingTransport.hpp">
+      <Filter>include\threading\transports\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\transports\endpoints\TQueueEndpoints.hpp">
+      <Filter>include\threading\transports\endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\transports\endpoints\TRingEndpoints.hpp">
+      <Filter>include\threading\transports\endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\transports\interfaces\TQueueInterfaces.hpp">
+      <Filter>include\threading\transports\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\transports\interfaces\TRingInterfaces.hpp">
+      <Filter>include\threading\transports\interfaces</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

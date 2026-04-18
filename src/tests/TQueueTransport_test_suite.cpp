@@ -15,7 +15,7 @@
 #include <iostream>
 #include <string_view>
 
-#include "threading/transports/TQueueTransport.hpp"
+#include "threading/transports/core/TQueueTransport.hpp"
 #include "tests/TQueueTransport_test_suite.hpp"
 #include "memory/memory_allocation.hpp"
 #include "debug/debug.hpp"

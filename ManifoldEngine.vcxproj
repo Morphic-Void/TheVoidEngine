@@ -186,8 +186,14 @@
     <ClInclude Include="include\tests\TQueueTransport_test_suite.hpp" />
     <ClInclude Include="include\tests\TRingTransport_test_suite.hpp" />
     <ClInclude Include="include\tests\TUnorderedSlots_test_harness.hpp" />
-    <ClInclude Include="include\threading\transports\TRingTransport.hpp" />
-    <ClInclude Include="include\threading\transports\TQueueTransport.hpp" />
+    <ClInclude Include="include\threading\transports\bundles\TQueueBundle.hpp" />
+    <ClInclude Include="include\threading\transports\bundles\TRingBundle.hpp" />
+    <ClInclude Include="include\threading\transports\core\TQueueTransport.hpp" />
+    <ClInclude Include="include\threading\transports\core\TRingTransport.hpp" />
+    <ClInclude Include="include\threading\transports\endpoints\TQueueEndpoints.hpp" />
+    <ClInclude Include="include\threading\transports\endpoints\TRingEndpoints.hpp" />
+    <ClInclude Include="include\threading\transports\interfaces\TQueueInterfaces.hpp" />
+    <ClInclude Include="include\threading\transports\interfaces\TRingInterfaces.hpp" />
     <ClInclude Include="include\types\fp16data_t.hpp" />
   </ItemGroup>
   <ItemGroup>

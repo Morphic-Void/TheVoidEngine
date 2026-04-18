@@ -12,8 +12,8 @@
 //
 //  Fixed-capacity SPSC ring transport for trivially copyable T.
 //
-//  Does not grow, discard, overwrite unread data, or provide blocking
-//  semantics.
+//  Does not grow, discard, overwrite unread data, or provide
+//  blocking semantics.
 //
 //  IMPORTANT SEMANTIC NOTE
 //  -----------------------
@@ -85,16 +85,16 @@ public:
 
     //  Producer operations
     //  - only safe to call from the producer thread
-    bool post(const T& src) noexcept { return post(&src, 1u); }
-    bool post(const T* const src, const std::uint32_t count = 1u) noexcept;
-    bool post(const TPodConstView<T>& src) noexcept { return post(src.data(), src.size()); }
+    [[nodiscard]] bool post(const T& src) noexcept { return post(&src, 1u); }
+    [[nodiscard]] bool post(const T* const src, const std::uint32_t count = 1u) noexcept;
+    [[nodiscard]] bool post(const TPodConstView<T>& src) noexcept { return post(src.data(), src.size()); }
     [[nodiscard]] std::uint32_t writable_count() const noexcept;
 
     //  Consumer operations
     //  - only safe to call from the consumer thread
-    bool read(T& dst) noexcept { return read(&dst, 1u); }
-    bool read(T* const dst, const std::uint32_t count = 1u) noexcept;
-    bool read(const TPodView<T>& dst) noexcept { return read(dst.data(), dst.size()); }
+    [[nodiscard]] bool read(T& dst) noexcept { return read(&dst, 1u); }
+    [[nodiscard]] bool read(T* const dst, const std::uint32_t count = 1u) noexcept;
+    [[nodiscard]] bool read(const TPodView<T>& dst) noexcept { return read(dst.data(), dst.size()); }
     [[nodiscard]] std::uint32_t readable_count() const noexcept;
 
     //  Setup and teardown

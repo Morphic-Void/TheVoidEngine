@@ -89,9 +89,9 @@ public:
 
     //  Producer operations
     //  - only safe to call from the producer thread
-    bool post(const T& src) noexcept { return post(&src, 1u); }
-    bool post(const T* const src, const std::uint32_t count = 1u) noexcept;
-    bool post(const TPodConstView<T>& src) noexcept { return post(src.data(), src.size()); }
+    [[nodiscard]] bool post(const T& src) noexcept { return post(&src, 1u); }
+    [[nodiscard]] bool post(const T* const src, const std::uint32_t count = 1u) noexcept;
+    [[nodiscard]] bool post(const TPodConstView<T>& src) noexcept { return post(src.data(), src.size()); }
 
     //  Producer query
     //  - only safe to call from the producer thread
@@ -100,9 +100,9 @@ public:
 
     //  Consumer operations
     //  - only safe to call from the consumer thread
-    bool read(T& dst) noexcept { return read(&dst, 1u); }
-    bool read(T* const dst, const std::uint32_t count = 1u) noexcept;
-    bool read(const TPodView<T>& dst) noexcept { return read(dst.data(), dst.size()); }
+    [[nodiscard]] bool read(T& dst) noexcept { return read(&dst, 1u); }
+    [[nodiscard]] bool read(T* const dst, const std::uint32_t count = 1u) noexcept;
+    [[nodiscard]] bool read(const TPodView<T>& dst) noexcept { return read(dst.data(), dst.size()); }
     [[nodiscard]] std::uint32_t current_readable_count() const noexcept;
     [[nodiscard]] std::uint32_t refresh_readable_count() noexcept;
 
@@ -116,7 +116,7 @@ public:
     //  Validation
     //  - full structural validity check
     //  - only safe to call while quiescent
-    bool validate() const noexcept;
+    [[nodiscard]] bool validate() const noexcept;
 
 private:
     static std::uint32_t growth_policy(const std::uint32_t capacity) noexcept;
