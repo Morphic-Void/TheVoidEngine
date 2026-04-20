@@ -116,7 +116,7 @@ public:
     TPodVector& operator=(const TPodVector&) noexcept = delete;
     TPodVector(TPodVector&&) noexcept = default;
     TPodVector& operator=(TPodVector&&) noexcept = default;
-    ~TPodVector() noexcept { deallocate(); };
+    ~TPodVector() noexcept { deallocate(); }
 
     //  Status
     [[nodiscard]] bool is_valid() const noexcept;
@@ -614,19 +614,19 @@ inline bool TPodVector<T>::reallocate(const std::size_t size, const std::size_t 
 template<typename T>
 inline bool TPodVector<T>::resize(const std::size_t size) noexcept
 {
-    return (size <= k_max_elements) ? reallocate(size, ((size > capacity()) ? memory::vector_growth_policy(size) : capacity())) : false;
+    return (size <= k_max_elements) ? reallocate(size, ((size > m_capacity) ? memory::vector_growth_policy(size) : m_capacity)) : false;
 }
 
 template<typename T>
 inline bool TPodVector<T>::reserve(const std::size_t minimum_capacity) noexcept
 {
-    return (minimum_capacity <= k_max_elements) ? reallocate(size(), std::max(memory::vector_growth_policy(minimum_capacity), capacity())) : false;
+    return (minimum_capacity <= k_max_elements) ? reallocate(m_size, std::max(memory::vector_growth_policy(minimum_capacity), m_capacity)) : false;
 }
 
 template<typename T>
 inline bool TPodVector<T>::ensure_free(const std::size_t extra) noexcept
 {
-    return (extra <= (k_max_elements - size())) ? reserve(size() + extra) : false;
+    return (extra <= (k_max_elements - m_size)) ? reserve(m_size + extra) : false;
 }
 
 template<typename T>

@@ -201,6 +201,9 @@
     <ClInclude Include="include\threading\transports\interfaces\TRingInterfaces.hpp">
       <Filter>include\threading\transports\interfaces</Filter>
     </ClInclude>
+    <ClInclude Include="include\containers\TPodFifo.hpp">
+      <Filter>include\containers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\io\file\file.cpp">

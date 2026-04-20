@@ -172,6 +172,7 @@
     <ClInclude Include="include\containers\StringBuffers.hpp" />
     <ClInclude Include="include\containers\TInstance.hpp" />
     <ClInclude Include="include\containers\TOrderedCollection.hpp" />
+    <ClInclude Include="include\containers\TPodFifo.hpp" />
     <ClInclude Include="include\containers\TPodVector.hpp" />
     <ClInclude Include="include\containers\TStableStorage.hpp" />
     <ClInclude Include="include\containers\TUnorderedCollection.hpp" />

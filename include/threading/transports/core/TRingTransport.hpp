@@ -69,7 +69,7 @@ public:
     TRing& operator=(const TRing&) = delete;
     TRing(TRing&&) noexcept = delete;
     TRing& operator=(TRing&&) noexcept = delete;
-    ~TRing() noexcept { (void)deallocate(); }
+    ~TRing() noexcept { deallocate(); }
 
     //  Producer status
     //  - only safe to call from the producer thread or while quiescent
