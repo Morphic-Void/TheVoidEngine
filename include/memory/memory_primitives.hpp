@@ -750,15 +750,15 @@ inline bool TMemoryToken<T>::can_steal(const CMemoryToken& token) noexcept
 template<typename T>
 inline bool TMemoryToken<T>::steal(CMemoryToken& token) noexcept
 {
-    if (!can_steal(token))
+    if (can_steal(token))
     {
-        return false;
+        deallocate();
+        m_data = token.m_data;
+        token.m_data = nullptr;
+        token.m_align = 0u;
+        return true;
     }
-    deallocate();
-    m_data = token.m_data;
-    token.m_data = nullptr;
-    token.m_align = 0u;
-    return true;
+    return false;
 }
 
 template<typename T>
