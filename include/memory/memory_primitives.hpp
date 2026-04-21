@@ -492,7 +492,7 @@ inline void CMemoryToken::steal(TMemoryToken<T>& token) noexcept
 {
     deallocate();
     m_data = token.m_data;
-    m_align = TMemoryToken<T>::k_align;
+    m_align = (m_data != nullptr) ? TMemoryToken<T>::k_align : std::size_t{ 0u };
     token.m_data = nullptr;
 }
 
@@ -750,7 +750,7 @@ inline bool TMemoryToken<T>::can_steal(const CMemoryToken& token) noexcept
 template<typename T>
 inline bool TMemoryToken<T>::steal(CMemoryToken& token) noexcept
 {
-    if ((token.m_data != nullptr) && (token.m_align != k_align))
+    if (!can_steal(token))
     {
         return false;
     }
