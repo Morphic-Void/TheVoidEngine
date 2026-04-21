@@ -204,6 +204,21 @@
     <ClInclude Include="include\containers\TPodFifo.hpp">
       <Filter>include\containers</Filter>
     </ClInclude>
+    <ClInclude Include="include\threading\transports\core\TOwningTransport.hpp">
+      <Filter>include\threading\transports\core</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tests\TOwningTransport_test_suite.hpp">
+      <Filter>include\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\transports\endpoints\TOwningEndpoints.hpp">
+      <Filter>include\threading\transports\endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\transports\interfaces\TOwningInterfaces.hpp">
+      <Filter>include\threading\transports\interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\transports\bundles\TOwningBundle.hpp">
+      <Filter>include\threading\transports\bundles</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\io\file\file.cpp">
@@ -240,6 +255,9 @@
       <Filter>src\tests</Filter>
     </ClCompile>
     <ClCompile Include="src\tests\TRingTransport_test_suite.cpp">
+      <Filter>src\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests\TOwningTransport_test_suite.cpp">
       <Filter>src\tests</Filter>
     </ClCompile>
   </ItemGroup>
@@ -290,6 +308,9 @@
     </None>
     <None Include="docs\containers\TPodFifo.md">
       <Filter>docs\containers</Filter>
+    </None>
+    <None Include="docs\threading\transports\TOwningTransport.md">
+      <Filter>docs\threading\transports</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

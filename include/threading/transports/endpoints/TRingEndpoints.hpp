@@ -85,7 +85,7 @@ template<typename T>
 inline bool TRingProducerEndpoint<T>::is_valid() const noexcept
 {
     MV_HARD_ASSERT(m_ring != nullptr);
-    return (m_ring != nullptr) ? m_ring->producer_is_valid() : false;
+    return (m_ring != nullptr) ? m_ring->posting_is_valid() : false;
 }
 
 template<typename T>
@@ -131,7 +131,7 @@ template<typename T>
 inline bool TRingConsumerEndpoint<T>::is_valid() const noexcept
 {
     MV_HARD_ASSERT(m_ring != nullptr);
-    return (m_ring != nullptr) ? m_ring->consumer_is_valid() : false;
+    return (m_ring != nullptr) ? m_ring->reading_is_valid() : false;
 }
 
 template<typename T>

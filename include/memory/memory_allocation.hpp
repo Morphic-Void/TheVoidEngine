@@ -251,9 +251,6 @@ constexpr std::size_t t_default_align() noexcept
 template<typename T>
 inline T* t_allocate(const std::size_t count) noexcept
 {
-    static_assert(std::is_trivially_copyable<T>::value,
-        "memory::t_allocate requires trivially copyable T.");
-
     constexpr std::size_t k_max_count = t_max_elements<T>();
     if ((count - 1u) >= k_max_count)
     {   //  the allocation request is either too large or zero size
@@ -269,9 +266,6 @@ inline T* t_allocate(const std::size_t count) noexcept
 template<typename T>
 inline void t_deallocate(T* const ptr) noexcept
 {
-    static_assert(std::is_trivially_copyable<T>::value,
-        "memory::t_deallocate requires trivially copyable T.");
-
     byte_deallocate(static_cast<void*>(ptr), t_default_align<T>());
 }
 

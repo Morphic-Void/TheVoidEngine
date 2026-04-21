@@ -201,7 +201,7 @@ Pointer rules:
 
 ## Status and validity
 
-### `producer_is_valid()`
+### `posting_is_valid()`
 
 Producer-side validity check.
 
@@ -215,7 +215,7 @@ Intended meaning:
 - common structural state is valid
 - producer-local write index is within range for the current readiness state
 
-### `consumer_is_valid()`
+### `reading_is_valid()`
 
 Consumer-side validity check.
 

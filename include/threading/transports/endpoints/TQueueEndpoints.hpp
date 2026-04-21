@@ -87,21 +87,21 @@ template<typename T>
 inline bool TQueueProducerEndpoint<T>::is_valid() const noexcept
 {
     MV_HARD_ASSERT(m_queue != nullptr);
-    return (m_queue != nullptr) ? m_queue->producer_is_valid() : false;
+    return (m_queue != nullptr) ? m_queue->posting_is_valid() : false;
 }
 
 template<typename T>
 inline bool TQueueProducerEndpoint<T>::is_ready() const noexcept
 {
     MV_HARD_ASSERT(m_queue != nullptr);
-    return (m_queue != nullptr) ? m_queue->producer_is_ready() : false;
+    return (m_queue != nullptr) ? m_queue->posting_is_ready() : false;
 }
 
 template<typename T>
 inline bool TQueueProducerEndpoint<T>::is_poisoned() const noexcept
 {
     MV_HARD_ASSERT(m_queue != nullptr);
-    return (m_queue != nullptr) ? m_queue->producer_poisoned() : false;
+    return (m_queue != nullptr) ? m_queue->posting_poisoned() : false;
 }
 
 template<typename T>
@@ -140,14 +140,14 @@ template<typename T>
 inline bool TQueueConsumerEndpoint<T>::is_valid() const noexcept
 {
     MV_HARD_ASSERT(m_queue != nullptr);
-    return (m_queue != nullptr) ? m_queue->consumer_is_valid() : false;
+    return (m_queue != nullptr) ? m_queue->reading_is_valid() : false;
 }
 
 template<typename T>
 inline bool TQueueConsumerEndpoint<T>::is_ready() const noexcept
 {
     MV_HARD_ASSERT(m_queue != nullptr);
-    return (m_queue != nullptr) ? m_queue->consumer_is_ready() : false;
+    return (m_queue != nullptr) ? m_queue->reading_is_ready() : false;
 }
 
 template<typename T>

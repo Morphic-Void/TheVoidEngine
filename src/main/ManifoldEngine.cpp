@@ -22,6 +22,7 @@
 #include "containers/TUnorderedCollection.hpp"
 #include "threading/transports/bundles/TRingBundle.hpp"
 #include "threading/transports/bundles/TQueueBundle.hpp"
+#include "threading/transports/bundles/TOwningBundle.hpp"
 #include "types/fp16data_t.hpp"
 #include "io/file/file.hpp"
 #include "io/file/log.hpp"
@@ -31,9 +32,12 @@
 #include "tests/TUnorderedSlots_test_harness.hpp"
 #include "tests/TQueueTransport_test_suite.hpp"
 #include "tests/TRingTransport_test_suite.hpp"
+#include "tests/TOwningTransport_test_suite.hpp"
 
 int main()
 {
+    int towning_test_result = run_owning_transport_tests();
+
     int tqueue_test_result = run_queue_transport_tests();
 
     int tring_test_result = run_ring_transport_tests();

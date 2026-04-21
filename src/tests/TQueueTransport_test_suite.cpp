@@ -181,11 +181,11 @@ void test_queue_uninitialised_state(TTestContext& ctx)
 {
     TQueue<char> queue;
 
-    TEST_EXPECT_TRUE(ctx, queue.producer_is_valid());
-    TEST_EXPECT_TRUE(ctx, queue.consumer_is_valid());
-    TEST_EXPECT_FALSE(ctx, queue.producer_is_ready());
-    TEST_EXPECT_FALSE(ctx, queue.consumer_is_ready());
-    TEST_EXPECT_FALSE(ctx, queue.producer_poisoned());
+    TEST_EXPECT_TRUE(ctx, queue.posting_is_valid());
+    TEST_EXPECT_TRUE(ctx, queue.reading_is_valid());
+    TEST_EXPECT_FALSE(ctx, queue.posting_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.reading_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.posting_poisoned());
     TEST_EXPECT_TRUE(ctx, queue.validate());
 
     TEST_EXPECT_EQ(ctx, queue.current_readable_count(), 0u);
@@ -200,22 +200,22 @@ void test_queue_initialise_rejection_and_conditioning(TTestContext& ctx)
     {
         TQueue<char> queue;
         TEST_EXPECT_FALSE(ctx, queue.initialise_fixed(TQueue<char>::k_max_capacity + 1u));
-        TEST_EXPECT_FALSE(ctx, queue.producer_is_ready());
+        TEST_EXPECT_FALSE(ctx, queue.posting_is_ready());
         TEST_EXPECT_TRUE(ctx, queue.validate());
     }
 
     {
         TQueue<char> queue;
         TEST_EXPECT_FALSE(ctx, queue.initialise_growable(128u, 64u));
-        TEST_EXPECT_FALSE(ctx, queue.producer_is_ready());
+        TEST_EXPECT_FALSE(ctx, queue.posting_is_ready());
         TEST_EXPECT_TRUE(ctx, queue.validate());
     }
 
     {
         TQueue<char> queue;
         TEST_EXPECT_TRUE(ctx, queue.initialise_fixed(0u, false));
-        TEST_EXPECT_TRUE(ctx, queue.producer_is_ready());
-        TEST_EXPECT_TRUE(ctx, queue.consumer_is_ready());
+        TEST_EXPECT_TRUE(ctx, queue.posting_is_ready());
+        TEST_EXPECT_TRUE(ctx, queue.reading_is_ready());
         TEST_EXPECT_TRUE(ctx, queue.validate());
 
         TEST_EXPECT_FALSE(ctx, queue.initialise_fixed(32u, false));
@@ -230,9 +230,9 @@ void test_queue_initial_allocation_failure(TTestContext& ctx)
     TEST_EXPECT_FALSE(ctx, queue.initialise_fixed(32u, false));
     (void)memory::enable_allocation(true);
 
-    TEST_EXPECT_FALSE(ctx, queue.producer_is_ready());
-    TEST_EXPECT_FALSE(ctx, queue.consumer_is_ready());
-    TEST_EXPECT_FALSE(ctx, queue.producer_poisoned());
+    TEST_EXPECT_FALSE(ctx, queue.posting_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.reading_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.posting_poisoned());
     TEST_EXPECT_TRUE(ctx, queue.validate());
 }
 
@@ -288,8 +288,8 @@ void test_queue_fixed_no_discard_rejects_overflow(TTestContext& ctx)
     TEST_EXPECT_TRUE(ctx, post_string(queue, make_repeated_string('A', 24u)));
     TEST_EXPECT_FALSE(ctx, post_string(queue, make_repeated_string('B', 16u)));
 
-    TEST_EXPECT_FALSE(ctx, queue.producer_poisoned());
-    TEST_EXPECT_TRUE(ctx, queue.producer_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.posting_poisoned());
+    TEST_EXPECT_TRUE(ctx, queue.posting_is_ready());
     TEST_EXPECT_TRUE(ctx, queue.validate());
 
     TEST_EXPECT_EQ(ctx, drain_queue(queue), make_repeated_string('A', 24u));
@@ -378,9 +378,9 @@ void run_queue_resize_success_script(tests::TTestContext& ctx,
         const bool accepted = queue.post(payload.data(), step.count);
 
         TEST_CASE_EXPECT_TRUE(ctx, case_name, accepted);
-        TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.producer_poisoned());
-        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.producer_is_ready());
-        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.consumer_is_ready());
+        TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.posting_poisoned());
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.posting_is_ready());
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.reading_is_ready());
         TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.validate());
 
         if (!accepted)
@@ -429,11 +429,11 @@ void run_queue_resize_failure_script(tests::TTestContext& ctx,
             TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.post(payload.data(), step.count));
             (void)memory::enable_allocation(true);
 
-            TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.producer_poisoned());
-            TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.producer_is_ready());
-            TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.consumer_is_ready());
-            TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.producer_is_valid());
-            TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.consumer_is_valid());
+            TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.posting_poisoned());
+            TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.posting_is_ready());
+            TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.reading_is_ready());
+            TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.posting_is_valid());
+            TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.reading_is_valid());
 
             TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.post("Z", 1u));
             TEST_CASE_EXPECT_EQ(ctx, case_name, tests::drain_queue(queue), expected_before_failure);
@@ -442,9 +442,9 @@ void run_queue_resize_failure_script(tests::TTestContext& ctx,
 
         const bool accepted = queue.post(payload.data(), step.count);
         TEST_CASE_EXPECT_TRUE(ctx, case_name, accepted);
-        TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.producer_poisoned());
-        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.producer_is_ready());
-        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.consumer_is_ready());
+        TEST_CASE_EXPECT_FALSE(ctx, case_name, queue.posting_poisoned());
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.posting_is_ready());
+        TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.reading_is_ready());
         TEST_CASE_EXPECT_TRUE(ctx, case_name, queue.validate());
 
         if (!accepted)
@@ -505,7 +505,7 @@ void test_queue_growable_resize_matrix(tests::TTestContext& ctx)
     }
 }
 
-void test_queue_consumer_can_drain_after_poison(tests::TTestContext& ctx)
+void test_queue_reading_can_drain_after_poison(tests::TTestContext& ctx)
 {
     TQueue<char> queue;
     TEST_EXPECT_TRUE(ctx, queue.initialise_growable(8u, 128u));
@@ -519,7 +519,7 @@ void test_queue_consumer_can_drain_after_poison(tests::TTestContext& ctx)
     TEST_EXPECT_FALSE(ctx, queue.post(growth_payload.data(), static_cast<std::uint32_t>(growth_payload.size())));
     (void)memory::enable_allocation(true);
 
-    TEST_EXPECT_TRUE(ctx, queue.producer_poisoned());
+    TEST_EXPECT_TRUE(ctx, queue.posting_poisoned());
     TEST_EXPECT_EQ(ctx, tests::drain_queue(queue), std::string("ABCDEF"));
     TEST_EXPECT_EQ(ctx, queue.refresh_readable_count(), 0u);
 }
@@ -532,11 +532,11 @@ void test_queue_deallocate_restores_empty(TTestContext& ctx)
 
     queue.deallocate();
 
-    TEST_EXPECT_TRUE(ctx, queue.producer_is_valid());
-    TEST_EXPECT_TRUE(ctx, queue.consumer_is_valid());
-    TEST_EXPECT_FALSE(ctx, queue.producer_is_ready());
-    TEST_EXPECT_FALSE(ctx, queue.consumer_is_ready());
-    TEST_EXPECT_FALSE(ctx, queue.producer_poisoned());
+    TEST_EXPECT_TRUE(ctx, queue.posting_is_valid());
+    TEST_EXPECT_TRUE(ctx, queue.reading_is_valid());
+    TEST_EXPECT_FALSE(ctx, queue.posting_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.reading_is_ready());
+    TEST_EXPECT_FALSE(ctx, queue.posting_poisoned());
     TEST_EXPECT_TRUE(ctx, queue.validate());
     TEST_EXPECT_EQ(ctx, queue.current_readable_count(), 0u);
     TEST_EXPECT_EQ(ctx, queue.refresh_readable_count(), 0u);
@@ -555,7 +555,7 @@ int test_queue_transport()
     test_queue_fixed_no_discard_rejects_overflow(ctx);
     test_queue_fixed_discard_replaces_buffered_data(ctx);
     test_queue_growable_resize_matrix(ctx);
-    test_queue_consumer_can_drain_after_poison(ctx);
+    test_queue_reading_can_drain_after_poison(ctx);
     test_queue_deallocate_restores_empty(ctx);
 
     print_summary("TQueueTransport", ctx);

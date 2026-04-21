@@ -155,6 +155,7 @@
     <ClCompile Include="src\main\ManifoldEngine.cpp" />
     <ClCompile Include="src\memory\memory_allocation.cpp" />
     <ClCompile Include="src\tests\TOrderedSlots_test_harness.cpp" />
+    <ClCompile Include="src\tests\TOwningTransport_test_suite.cpp" />
     <ClCompile Include="src\tests\TQueueTransport_test_suite.cpp" />
     <ClCompile Include="src\tests\TRingTransport_test_suite.cpp" />
     <ClCompile Include="src\tests\TUnorderedSlots_test_harness.cpp" />
@@ -184,15 +185,20 @@
     <ClInclude Include="include\memory\memory_allocation.hpp" />
     <ClInclude Include="include\memory\memory_primitives.hpp" />
     <ClInclude Include="include\tests\TOrderedSlots_test_harness.hpp" />
+    <ClInclude Include="include\tests\TOwningTransport_test_suite.hpp" />
     <ClInclude Include="include\tests\TQueueTransport_test_suite.hpp" />
     <ClInclude Include="include\tests\TRingTransport_test_suite.hpp" />
     <ClInclude Include="include\tests\TUnorderedSlots_test_harness.hpp" />
+    <ClInclude Include="include\threading\transports\bundles\TOwningBundle.hpp" />
     <ClInclude Include="include\threading\transports\bundles\TQueueBundle.hpp" />
     <ClInclude Include="include\threading\transports\bundles\TRingBundle.hpp" />
+    <ClInclude Include="include\threading\transports\core\TOwningTransport.hpp" />
     <ClInclude Include="include\threading\transports\core\TQueueTransport.hpp" />
     <ClInclude Include="include\threading\transports\core\TRingTransport.hpp" />
+    <ClInclude Include="include\threading\transports\endpoints\TOwningEndpoints.hpp" />
     <ClInclude Include="include\threading\transports\endpoints\TQueueEndpoints.hpp" />
     <ClInclude Include="include\threading\transports\endpoints\TRingEndpoints.hpp" />
+    <ClInclude Include="include\threading\transports\interfaces\TOwningInterfaces.hpp" />
     <ClInclude Include="include\threading\transports\interfaces\TQueueInterfaces.hpp" />
     <ClInclude Include="include\threading\transports\interfaces\TRingInterfaces.hpp" />
     <ClInclude Include="include\types\fp16data_t.hpp" />
@@ -212,6 +218,7 @@
     <None Include="docs\containers\TUnorderedCollection.md" />
     <None Include="docs\engineering-aphorisms.md" />
     <None Include="docs\engineering-principles.md" />
+    <None Include="docs\threading\transports\TOwningTransport.md" />
     <None Include="docs\threading\transports\TQueueTransport.md" />
     <None Include="docs\threading\transports\TRingTransport.md" />
     <None Include="README.md" />

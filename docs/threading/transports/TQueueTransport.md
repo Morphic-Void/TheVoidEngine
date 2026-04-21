@@ -364,7 +364,7 @@ returns the same value as `current_readable_count()`.
 
 ## Status and validity
 
-### `producer_is_ready()`
+### `posting_is_ready()`
 
 Shallow producer-side operational readiness.
 
@@ -373,7 +373,7 @@ Intended meaning:
 - transport is initialised
 - producer is not poisoned
 
-### `consumer_is_ready()`
+### `reading_is_ready()`
 
 Shallow consumer-side operational readiness.
 
@@ -381,11 +381,11 @@ Intended meaning:
 
 - transport is initialised
 
-### `producer_poisoned()`
+### `posting_poisoned()`
 
 Reports terminal producer-side allocation failure state.
 
-### `producer_is_valid()`
+### `posting_is_valid()`
 
 Producer-side in-flight validity check.
 
@@ -396,7 +396,7 @@ Safe only:
 
 Checks producer-visible invariants only.
 
-### `consumer_is_valid()`
+### `reading_is_valid()`
 
 Consumer-side in-flight validity check.
 

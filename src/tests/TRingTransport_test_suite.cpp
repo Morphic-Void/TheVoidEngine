@@ -170,8 +170,8 @@ void test_ring_uninitialised_state(TTestContext& ctx)
 
     TEST_EXPECT_TRUE(ctx, ring.is_valid());
     TEST_EXPECT_FALSE(ctx, ring.is_ready());
-    TEST_EXPECT_TRUE(ctx, ring.producer_is_valid());
-    TEST_EXPECT_TRUE(ctx, ring.consumer_is_valid());
+    TEST_EXPECT_TRUE(ctx, ring.posting_is_valid());
+    TEST_EXPECT_TRUE(ctx, ring.reading_is_valid());
 
     TEST_EXPECT_EQ(ctx, ring.readable_count(), 0u);
     TEST_EXPECT_EQ(ctx, ring.writable_count(), 0u);
@@ -311,8 +311,8 @@ void test_ring_repeated_fill_drain_cycles(TTestContext& ctx)
         TEST_EXPECT_EQ(ctx, ring.readable_count(), 0u);
         TEST_EXPECT_EQ(ctx, ring.writable_count(), 32u);
         TEST_EXPECT_TRUE(ctx, ring.is_valid());
-        TEST_EXPECT_TRUE(ctx, ring.producer_is_valid());
-        TEST_EXPECT_TRUE(ctx, ring.consumer_is_valid());
+        TEST_EXPECT_TRUE(ctx, ring.posting_is_valid());
+        TEST_EXPECT_TRUE(ctx, ring.reading_is_valid());
     }
 }
 
@@ -326,8 +326,8 @@ void test_ring_deallocate_restores_empty(TTestContext& ctx)
 
     TEST_EXPECT_TRUE(ctx, ring.is_valid());
     TEST_EXPECT_FALSE(ctx, ring.is_ready());
-    TEST_EXPECT_TRUE(ctx, ring.producer_is_valid());
-    TEST_EXPECT_TRUE(ctx, ring.consumer_is_valid());
+    TEST_EXPECT_TRUE(ctx, ring.posting_is_valid());
+    TEST_EXPECT_TRUE(ctx, ring.reading_is_valid());
     TEST_EXPECT_EQ(ctx, ring.readable_count(), 0u);
     TEST_EXPECT_EQ(ctx, ring.writable_count(), 0u);
 }
