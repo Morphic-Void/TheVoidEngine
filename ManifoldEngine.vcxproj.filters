@@ -225,6 +225,12 @@
     <ClInclude Include="include\memory\memory_typeless.hpp">
       <Filter>include\memory</Filter>
     </ClInclude>
+    <ClInclude Include="include\types\type_ids.hpp">
+      <Filter>include\types</Filter>
+    </ClInclude>
+    <ClInclude Include="include\types\typeless.hpp">
+      <Filter>include\types</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\io\file\file.cpp">

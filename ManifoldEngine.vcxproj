@@ -203,6 +203,8 @@
     <ClInclude Include="include\threading\transports\interfaces\TQueueInterfaces.hpp" />
     <ClInclude Include="include\threading\transports\interfaces\TRingInterfaces.hpp" />
     <ClInclude Include="include\types\fp16data_t.hpp" />
+    <ClInclude Include="include\types\typeless.hpp" />
+    <ClInclude Include="include\types\type_ids.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
