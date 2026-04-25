@@ -172,4 +172,3 @@ inline std::uint32_t TRingConsumerEndpoint<T>::readable_count() const noexcept
 }   //  namespace threading::transports
 
 #endif  //  #ifndef TRING_ENDPOINTS_HPP_INCLUDED
-
