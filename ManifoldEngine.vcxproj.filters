@@ -103,6 +103,12 @@
     <Filter Include="include\system">
       <UniqueIdentifier>{1ef648dd-f950-48e9-8d06-f300e76e082f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\io\path">
+      <UniqueIdentifier>{bfc0838c-3bda-4900-8a15-7ef695805ca5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\io\path">
+      <UniqueIdentifier>{4c854f27-b06d-4ef6-bf3a-5a0d1df89e49}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\containers\ByteBuffers.hpp">
@@ -110,9 +116,6 @@
     </ClInclude>
     <ClInclude Include="include\io\file\file.hpp">
       <Filter>include\io\file</Filter>
-    </ClInclude>
-    <ClInclude Include="include\io\file\internal\native_path.hpp">
-      <Filter>include\io\file\internal</Filter>
     </ClInclude>
     <ClInclude Include="include\io\file\internal\file_utils.hpp">
       <Filter>include\io\file\internal</Filter>
@@ -249,13 +252,13 @@
     <ClInclude Include="include\threading\transports\interfaces\TBulkInterfaces.hpp">
       <Filter>include\threading\transports\interfaces</Filter>
     </ClInclude>
+    <ClInclude Include="include\io\path\native_path.hpp">
+      <Filter>include\io\path</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\io\file\file.cpp">
       <Filter>src\io\file</Filter>
-    </ClCompile>
-    <ClCompile Include="src\io\file\internal\native_path.cpp">
-      <Filter>src\io\file\internal</Filter>
     </ClCompile>
     <ClCompile Include="src\io\file\internal\file_utils.cpp">
       <Filter>src\io\file\internal</Filter>
@@ -292,6 +295,9 @@
     </ClCompile>
     <ClCompile Include="src\tests\run_tests.cpp">
       <Filter>src\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\path\native_path.cpp">
+      <Filter>src\io\path</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

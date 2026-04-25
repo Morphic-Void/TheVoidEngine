@@ -10,6 +10,7 @@
 
 #include "io/file/log.hpp"
 #include "io/file/internal/file_utils.hpp"
+#include "io/path/native_path.hpp"
 
 namespace io::file
 {
@@ -19,7 +20,7 @@ bool Log::open(const char* utf8_path, const bool append) noexcept
     close();
     if (utf8_path != nullptr)
     {
-        NativePath std_path = stdPath(utf8_path);
+        path::NativePath std_path = path::nativePath(utf8_path);
         if (!std_path.is_empty())
         {
             m_stream = openFile(std_path, (append ? OpenMode::TextAppend : OpenMode::TextWrite));

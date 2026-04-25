@@ -154,8 +154,8 @@
     <ClCompile Include="src\debug\debug.cpp" />
     <ClCompile Include="src\io\file\file.cpp" />
     <ClCompile Include="src\io\file\internal\file_utils.cpp" />
-    <ClCompile Include="src\io\file\internal\native_path.cpp" />
     <ClCompile Include="src\io\file\log.cpp" />
+    <ClCompile Include="src\io\path\native_path.cpp" />
     <ClCompile Include="src\main\ManifoldEngine.cpp" />
     <ClCompile Include="src\memory\memory_allocation.cpp" />
     <ClCompile Include="src\tests\run_tests.cpp" />
@@ -185,8 +185,8 @@
     <ClInclude Include="include\debug\debug.hpp" />
     <ClInclude Include="include\io\file\file.hpp" />
     <ClInclude Include="include\io\file\internal\file_utils.hpp" />
-    <ClInclude Include="include\io\file\internal\native_path.hpp" />
     <ClInclude Include="include\io\file\log.hpp" />
+    <ClInclude Include="include\io\path\native_path.hpp" />
     <ClInclude Include="include\memory\memory_allocation.hpp" />
     <ClInclude Include="include\memory\memory_primitives.hpp" />
     <ClInclude Include="include\memory\memory_typeless.hpp" />

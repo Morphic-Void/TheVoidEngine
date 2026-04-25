@@ -30,7 +30,7 @@
 #include "threading/transports/bundles/TQueueBundle.hpp"
 #include "threading/transports/bundles/TOwningBundle.hpp"
 #include "types/fp16data_t.hpp"
-#include "io/file/internal/native_path.hpp"
+#include "io/path/native_path.hpp"
 #include "io/file/internal/file_utils.hpp"
 #include "io/file/file.hpp"
 #include "io/file/log.hpp"

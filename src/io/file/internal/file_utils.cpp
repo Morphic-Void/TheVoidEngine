@@ -15,35 +15,48 @@
 #include "io/file/internal/file_utils.hpp"
 
 #if defined(_WIN32) || defined(_WIN64)
-#include <io.h>        // _fileno
-#include <fcntl.h>     // _get_osfhandle
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #include <Windows.h>
+    #include <io.h>
+    #include <fcntl.h>
 #else
-#include <unistd.h>    // fsync
+    //  default, assumes _POSIX_VERSION or __APPLE__ or__linux__ or similar
+    #include <sys/types.h>
+    #include <unistd.h>
 #endif
 
 namespace io::file
 {
 
-std::FILE* openFile(const NativePath& file_path, const OpenMode mode) noexcept
+std::FILE* openFile(const path::NativePath& file_path, const OpenMode mode) noexcept
 {
     std::FILE* handle = nullptr;
     if (!file_path.is_empty())
     {
+        const std::uint8_t mode_index = static_cast<std::uint8_t>(mode);
+        if (mode_index < 5u)
+        {
 #if defined(_WIN32) || defined(_WIN64)
-        static const wchar_t* const modes[] = {L"rb", L"wb", L"ab", L"wt", L"at"};
-        if (_wfopen_s(&handle, file_path.data(), modes[static_cast<std::uint8_t>(mode)]) != 0)
-        {   //  file open failed, ensure that the handle is nullptr
-            handle = nullptr;
-        }
+            static const wchar_t* const modes[] = {L"rb", L"wb", L"ab", L"wt", L"at"};
+            if (_wfopen_s(&handle, file_path.data(), modes[static_cast<std::uint8_t>(mode)]) != 0)
+            {   //  file open failed, ensure that the handle is nullptr
+                handle = nullptr;
+            }
 #else
-        static const char* const modes[] = { "rb", "wb", "ab", "wt", "at" };
-        handle = std::fopen(file_path.data(), modes[static_cast<std::uint8_t>(mode)]);
+            static const char* const modes[] = { "rb", "wb", "ab", "wt", "at" };
+            handle = std::fopen(file_path.data(), modes[static_cast<std::uint8_t>(mode)]);
 #endif
+        }
     }
     return handle;
 }
 
-void removeFile(const NativePath& file_path) noexcept
+void removeFile(const path::NativePath& file_path) noexcept
 {
     if (!file_path.is_empty())
     {
@@ -55,7 +68,7 @@ void removeFile(const NativePath& file_path) noexcept
     }
 }
 
-bool renameFile(const NativePath& src_path, const NativePath& dst_path) noexcept
+bool renameFile(const path::NativePath& src_path, const path::NativePath& dst_path) noexcept
 {
     bool success = false;
     if (!src_path.is_empty() && !dst_path.is_empty())
