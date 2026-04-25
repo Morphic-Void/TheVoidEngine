@@ -12,6 +12,8 @@
 //
 //  Triple-buffered SPSC sequential transport for trivially copyable T.
 //
+//  Defines threading::transports::TQueue<T>.
+// 
 //  Does not provide MPMC-style queue semantics, blocking semantics,
 //  or shared random access.
 //
@@ -114,6 +116,7 @@ private:
     bool growth_and_discard_policy(const std::uint32_t count, const std::uint32_t buffer_size, std::uint32_t& target_capacity, bool& discard) const noexcept;
     bool is_canonical_empty() const noexcept;
 
+    //  Constants
     static constexpr std::uint32_t k_null_buffer_index{ 3u };
     static constexpr std::uint32_t k_default_staged_word{ 4u };
 

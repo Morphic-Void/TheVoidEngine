@@ -12,6 +12,8 @@
 //
 //  Fixed-capacity SPSC ring transport for owned T.
 //
+//  Defines threading::transports::TOwning<T>.
+// 
 //  Does not grow, discard, overwrite unread data, or provide
 //  blocking semantics.
 //
@@ -53,12 +55,13 @@ template<typename T>
 class TOwning
 {
 private:
+    static_assert(!std::is_const_v<T>, "TOwning<T> requires non-const T.");
     static_assert(!std::is_copy_constructible_v<T>, "TOwning<T> requires non-copy constructible T.");
     static_assert(!std::is_copy_assignable_v<T>, "TOwning<T> requires non-copy assignable T.");
     static_assert(std::is_nothrow_default_constructible_v<T>, "TOwning<T> requires nothrow default constructible T.");
-    static_assert(std::is_nothrow_destructible_v<T>, "TOwning<T> requires nothrow destructible T.");
     static_assert(std::is_nothrow_move_constructible_v<T>, "TOwning<T> requires nothrow move constructible T.");
     static_assert(std::is_nothrow_move_assignable_v<T>, "TOwning<T> requires nothrow move assignable T.");
+    static_assert(std::is_nothrow_destructible_v<T>, "TOwning<T> requires nothrow destructible T.");
 
 public:
     static constexpr std::uint32_t k_max_capacity = 0x00100000u;    //  approximately 1 million elements

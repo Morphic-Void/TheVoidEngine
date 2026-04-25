@@ -31,7 +31,7 @@ using native_char = char;
 
 using NativePath = TPodVector<native_char>;
 NativePath stdPath(const char* utf8_path) noexcept;         // UTF-8 -> native (and policy)
-NativePath tmpPath(const NativePath& std_path) noexcept;   // append ".tmp"
+NativePath tmpPath(const NativePath& std_path) noexcept;    // append ".tmp"
 
 }   //  namespace io::file
 

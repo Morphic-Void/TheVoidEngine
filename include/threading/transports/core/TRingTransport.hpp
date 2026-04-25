@@ -12,6 +12,8 @@
 //
 //  Fixed-capacity SPSC ring transport for trivially copyable T.
 //
+//  Defines threading::transports::TRing<T>.
+// 
 //  Does not grow, discard, overwrite unread data, or provide
 //  blocking semantics.
 //
