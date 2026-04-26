@@ -14,9 +14,17 @@ Attribution is appreciated where practical.
 
 ## Why write another engine?
 
+### The usual advice is mostly right
+
 The usual advice is simple: do not write your own game engine.
 
-I have given that advice to other people, and I still think it is usually right.
+I have often given that advice to other people, and I still think it was
+usually the right advice. In the situations people brought to me, writing an
+engine was almost never the best path to the game they wanted to ship.
+
+That does not mean there are no valid reasons to write one. It means the
+valid reasons are narrower, more specific, and usually more expensive than
+people expect.
 
 Writing a game engine is not just writing a renderer, a physics system, or
 a few containers. It quickly becomes a pile of interacting disciplines:
@@ -31,23 +39,78 @@ skills involved, and in many cases they do not yet know enough to know which
 skills will be needed. That is not a criticism; it is just the shape of the
 problem. A mature engine hides a vast amount of accumulated knowledge.
 
-I am not approaching this from the outside.
-
-I have worked with Unreal Engine for over a decade, and I have also worked
-with many non-public engines used by major publishers, most prominently at
-EA and Ubisoft. That does not make writing an engine easy, but it does mean
-I have direct experience of what engines actually contain: not just the
-visible systems, but the accumulated tools, constraints, failure modes,
-maintenance costs, production compromises, and long-tail edge cases.
-
 For most developers, especially anyone trying to ship a first game, writing
 an engine is the wrong trade. It turns one hard project into several hard
 projects, and it will usually steal time from the thing that matters most:
 finishing the game.
 
-This project deliberately breaks that rule.
+### But "do not write an engine" is not an absolute rule
+
+The advice is good because it applies to most cases, not because it applies
+to every case.
+
+There are situations where writing a custom engine, runtime, framework, or
+toolchain can make sense: unusual technical requirements, research, platform
+constraints, education, special-purpose tools, tiny bespoke runtimes,
+preservation work, engine-as-product work, or teams whose core competency is
+engine and systems engineering.
+
+There is also some historical distortion in the modern discussion. I
+started in the games industry in the 1980s, before off-the-shelf engines and
+large publisher-wide engines were the normal way to build games. At that
+time, making a game often meant building the runtime framework as part of
+making the game. The "engine" might be a loose collection of game code, file
+formats, converters, standalone tools, and whatever available asset tools
+made sense, such as Deluxe Paint.
+
+Even Unreal Engine started as the technology for a specific game. The clue
+is in the name. It later became a general-purpose commercial engine, but it
+did not begin as a requirement to solve every possible game development
+problem for every possible team.
+
+### A custom engine is not a public engine competitor
+
+There is a common false assumption in some criticism of custom engines: that
+writing an engine means trying to compete with Unreal, Unity, Godot, or
+other large public engines on features, scale, scope, workflow, ecosystem,
+or user support.
+
+That is not what this project is.
+
+A custom engine does not have to satisfy hundreds or thousands of unknown
+users. It does not need to support every common genre, every asset workflow,
+every rendering technique, every platform, every scripting preference, or
+every production style. It does not need to provide the same editor
+experience, marketplace, documentation surface, plugin ecosystem, or
+compatibility guarantees as a public general-purpose engine.
+
+Large engines are impressive partly because they solve broad problems for
+many teams. That breadth is also why they can become awkward when a project
+needs to cut across their assumptions.
+
+The useful comparison is not between this codebase and Unreal or Unity as
+products. The useful comparison is between this codebase and the specific
+technical, creative, and maintenance requirements of this project.
+
+Large engines solve a wider problem. This engine is intended to solve a
+narrower one.
+
+### I am not approaching this from the outside
+
+I have worked with Unreal Engine for over a decade, and I have also worked
+with many non-public engines used by major publishers, most prominently at
+EA and Ubisoft.
+
+That does not make writing an engine easy, but it does mean I have direct
+experience of what engines actually contain: not just the visible systems,
+but the accumulated tools, constraints, failure modes, maintenance costs,
+production compromises, and long-tail edge cases.
+
+This project deliberately breaks the usual rule.
 
 It does so for specific reasons, not because the rule is wrong.
+
+### Why this project is an exception
 
 First, this is partly a demonstration of what I can build. I have spent my
 career working on low-level systems, rendering, optimisation, tooling, and
@@ -72,6 +135,8 @@ raw complexity; it is shape. The rendering and physics requirements sit in a
 place where a large general-purpose engine would likely be fighting me in
 the areas where I most need direct control.
 
+### Why this game?
+
 There is an obvious question: if the game is awkward to build in existing
 engines, why not build a different game?
 
@@ -90,19 +155,31 @@ runtime infrastructure, the pipeline infrastructure, the tooling direction,
 and the game built on top of that stack. The technology is not incidental
 overhead; it is part of the purpose of the project.
 
-That still does not mean I intend to build everything from scratch.
+### What I am not trying to build
+
+This does not mean I intend to build everything from scratch.
 
 Where existing asset pipelines, file formats, tools, libraries, or engine
 components can be scavenged sensibly, I will use them. I am not trying to
-prove purity, and I am not a masochist. The point is to own the parts where
-ownership matters: the runtime model, the core infrastructure, the rendering
-and physics decisions that shape the game, and the long-term maintainability
-of the codebase.
+prove purity, and I am not a masochist.
+
+The point is to own the parts where ownership matters: the runtime model,
+the core infrastructure, the rendering and physics decisions that shape the
+game, and the long-term maintainability of the codebase.
+
+This is not an argument against existing engines. It is an argument for
+knowing what problem you are actually solving.
+
+### The actual trade
 
 This is not a recommendation that other people should do the same.
 
 If your goal is simply to make and ship a game, use an existing engine
-unless you have a clear, concrete, and well-understood reason not to.
+unless you have a clear, concrete, and well-understood reason not to. That
+does not mean a custom engine must compete with the large public engines.
+It does mean you must understand which parts you are choosing to own, which
+parts you are choosing not to build, and what those choices will cost.
+
 The likelihood that you already have all the required skills is low.
 The likelihood that you know in advance all the skills you will need
 is lower still.
@@ -110,9 +187,6 @@ is lower still.
 In this case, the cost is accepted deliberately. The engine exists because
 the control, the constraints, the game idea, the engineering practice, and
 the long-term infrastructure are all part of the same project.
-
-This project is therefore not an argument against existing engines. It is an
-argument for knowing what problem you are actually solving.
 
 Most games need a finished game more than they need a new engine.
 
