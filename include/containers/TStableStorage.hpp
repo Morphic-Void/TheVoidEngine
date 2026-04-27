@@ -294,7 +294,7 @@ inline void TStableStorage<T>::deallocate() noexcept
 template<typename T>
 inline void TStableStorage<T>::move_from(TStableStorage&& src) noexcept
 {
-    m_buffers = std::move(other.m_buffers);
+    m_buffers = std::move(src.m_buffers);
     m_buffer_capacity = src.m_buffer_capacity;
     m_buffer_shift = src.m_buffer_shift;
     m_slot_mask = src.m_slot_mask;

@@ -115,6 +115,9 @@
     <Filter Include="include\module">
       <UniqueIdentifier>{7e3aa772-a336-49d7-a680-8de57fafa5a0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\io\codec">
+      <UniqueIdentifier>{c5f3c8eb-73ae-4308-a18c-991bc41e3915}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\containers\ByteBuffers.hpp">
@@ -310,6 +313,9 @@
     </ClCompile>
     <ClCompile Include="src\module\module_binding.cpp">
       <Filter>src\module</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\codec\tga.cpp">
+      <Filter>src\io\codec</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

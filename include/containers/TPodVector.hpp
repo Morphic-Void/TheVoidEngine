@@ -116,8 +116,8 @@ public:
     TPodVector& operator=(const TPodVector&) noexcept = delete;
 
     //  Move lifetime
-    TPodVector(TPodVector&&) noexcept =;
-    TPodVector& operator=(TPodVector&&) noexcept ;
+    TPodVector(TPodVector&&) noexcept;
+    TPodVector& operator=(TPodVector&&) noexcept;
 
     //  Destructor
     ~TPodVector() noexcept { deallocate(); }
@@ -194,7 +194,7 @@ private:
     static constexpr std::size_t k_max_bytes = k_max_elements * k_element_size;
 
     [[nodiscard]] bool is_internal_ptr(const T* const ptr) const noexcept;
-    void move_from(TPodVector&& src) noexcept;
+    void move_from(TPodVector& src) noexcept;
 
     memory::TMemoryToken<T> m_token = memory::TMemoryToken<T>{};
     std::size_t m_size = 0u;
@@ -675,7 +675,7 @@ inline bool TPodVector<T>::is_internal_ptr(const T* const ptr) const noexcept
 }
 
 template<typename T>
-inline void TPodVector<T>::move_from(TPodVector&& src) noexcept
+inline void TPodVector<T>::move_from(TPodVector& src) noexcept
 {
     m_token = std::move(src.m_token);
     m_size = src.m_size;
