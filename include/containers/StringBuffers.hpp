@@ -90,8 +90,8 @@ public:
 
     //  Default lifetime and assignment
     CStringView() noexcept = default;
-    CStringView(const CStringView& other) noexcept = default;
-    CStringView& operator=(const CStringView& other) noexcept = default;
+    CStringView(const CStringView&) noexcept = default;
+    CStringView& operator=(const CStringView&) noexcept = default;
     ~CStringView() noexcept = default;
 
     //  Construction
@@ -155,10 +155,12 @@ public:
     CSimpleString() noexcept = default;
     CSimpleString(const CSimpleString&) = delete;
     CSimpleString& operator=(const CSimpleString&) = delete;
-    CSimpleString(CSimpleString&& other) noexcept = default;
-    CSimpleString& operator=(CSimpleString&& other) noexcept = default;
 
-    //  Move lifetime and construction
+    //  Move lifetime
+    CSimpleString(CSimpleString&&) noexcept;
+    CSimpleString& operator=(CSimpleString&&) noexcept;
+
+    //  Construction and destruction
     explicit CSimpleString(const char* const cstring) noexcept { set(cstring); }
     explicit CSimpleString(const std::uint8_t* const string) noexcept { set(string); }
     explicit CSimpleString(const char* const cstring, const std::size_t length) noexcept { set(cstring, length); }
@@ -301,8 +303,8 @@ public:
     CStableStrings() noexcept = default;
     CStableStrings(const CStableStrings&) = delete;
     CStableStrings& operator=(const CStableStrings&) = delete;
-    CStableStrings(CStableStrings&& other) noexcept = default;
-    CStableStrings& operator=(CStableStrings&& other) noexcept = default;
+    CStableStrings(CStableStrings&&) noexcept = default;
+    CStableStrings& operator=(CStableStrings&&) noexcept = default;
 
     //  Lifetime
     explicit CStableStrings(const std::size_t string_count, const std::size_t string_storage_size) noexcept { (void)initialise(string_count, string_storage_size); }
@@ -422,6 +424,24 @@ private:
 //==============================================================================
 //  CSimpleString out of class function bodies
 //==============================================================================
+
+inline CSimpleString::CSimpleString(CSimpleString&& src) noexcept
+{
+    m_string = std::move(src.m_string);
+    m_length = src.m_length;
+    src.m_length = 0u;
+}
+
+inline CSimpleString& CSimpleString::operator=(CSimpleString&& src) noexcept
+{
+    if (this != &src)
+    {
+        m_string = std::move(src.m_string);
+        m_length = src.m_length;
+        src.m_length = 0u;
+    }
+    return *this;
+}
 
 inline bool CSimpleString::set(const std::uint8_t* const string) noexcept
 {

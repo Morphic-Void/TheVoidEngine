@@ -65,7 +65,7 @@ public:
 
     //  Move lifetime
     TInstance(TInstance&& other) noexcept : m_token(std::move(other.m_token)) {}
-    TInstance& operator=(TInstance&& other) noexcept;
+    TInstance& operator=(TInstance&&) noexcept;
 
     //  Destructor
     ~TInstance() noexcept { destroy_and_deallocate(); }

@@ -55,8 +55,10 @@ public:
     TStableStorage() noexcept = default;
     TStableStorage(const TStableStorage&) noexcept = delete;
     TStableStorage& operator=(const TStableStorage&) noexcept = delete;
-    TStableStorage(TStableStorage&&) noexcept = default;
-    TStableStorage& operator=(TStableStorage&&) noexcept = default;
+
+    //  Move lifetime
+    TStableStorage(TStableStorage&&) noexcept;
+    TStableStorage& operator=(TStableStorage&&) noexcept;
 
     //  Destructor
     ~TStableStorage() noexcept { deallocate(); };
@@ -87,6 +89,7 @@ private:
     [[nodiscard]] std::size_t buffer_slots() const noexcept { return m_slot_mask + 1u; }
     [[nodiscard]] std::size_t buffer_index(const std::size_t slot_index) const noexcept { return slot_index >> m_buffer_shift; }
     [[nodiscard]] std::size_t buffer_slot(const std::size_t slot_index) const noexcept { return slot_index & m_slot_mask; }
+    void move_from(TStableStorage&& src) noexcept;
 
     memory::TMemoryToken<memory::TMemoryToken<T>> m_buffers = memory::TMemoryToken<memory::TMemoryToken<T>>{};
 
@@ -99,6 +102,22 @@ private:
 //==============================================================================
 //  TStableStorage<T> out of class function bodies
 //==============================================================================
+
+template<typename T>
+inline TStableStorage<T>::TStableStorage(TStableStorage&& src) noexcept
+{
+    take_from(src);
+}
+
+template<typename T>
+inline TStableStorage<T>& TStableStorage<T>::operator=(TStableStorage&& src) noexcept
+{
+    if (this != &src)
+    {
+        take_from(src);
+    }
+    return *this;
+}
 
 template<typename T>
 inline bool TStableStorage<T>::is_valid() const noexcept
@@ -270,6 +289,20 @@ inline void TStableStorage<T>::deallocate() noexcept
     m_buffer_shift = 0u;
     m_slot_mask = 0u;
     m_slot_capacity = 0u;
+}
+
+template<typename T>
+inline void TStableStorage<T>::move_from(TStableStorage&& src) noexcept
+{
+    m_buffers = std::move(other.m_buffers);
+    m_buffer_capacity = src.m_buffer_capacity;
+    m_buffer_shift = src.m_buffer_shift;
+    m_slot_mask = src.m_slot_mask;
+    m_slot_capacity = src.m_slot_capacity;
+    src.m_buffer_capacity = 0u;
+    src.m_buffer_shift = 0u;
+    src.m_slot_mask = 0u;
+    src.m_slot_capacity = 0u;
 }
 
 #endif  //  TSTABLE_STORAGE_HPP_INCLUDED

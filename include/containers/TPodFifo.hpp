@@ -56,8 +56,12 @@ public:
     TPodFifo() noexcept = default;
     TPodFifo(const TPodFifo&) noexcept = delete;
     TPodFifo& operator=(const TPodFifo&) noexcept = delete;
-    TPodFifo(TPodFifo&&) noexcept = default;
-    TPodFifo& operator=(TPodFifo&&) noexcept = default;
+
+    //  Move lifetime
+    TPodFifo(TPodFifo&&) noexcept;
+    TPodFifo& operator=(TPodFifo&&) noexcept;
+
+    //  Destructor
     ~TPodFifo() noexcept { deallocate(); }
 
     //  Status
@@ -97,6 +101,7 @@ public:
 
 private:
     void pack(T* const dst, const T* const src) noexcept;
+    void move_from(TPodFifo&& src) noexcept;
     memory::TMemoryToken<T> m_token;
     std::size_t m_size = 0u;
     std::size_t m_capacity = 0u;
@@ -106,6 +111,22 @@ private:
 //==============================================================================
 //  TPodFifo<T> out of class function bodies
 //==============================================================================
+
+template<typename T>
+inline TPodFifo<T>::TPodFifo(TPodFifo&& src) noexcept
+{
+    move_from(src);
+}
+
+template<typename T>
+inline TPodFifo<T>& TPodFifo<T>::operator=(TPodFifo&& src) noexcept
+{
+    if (this != &src)
+    {
+        move_from(src);
+    }
+    return *this;
+}
 
 template<typename T>
 inline bool TPodFifo<T>::is_valid() const noexcept
@@ -292,6 +313,19 @@ inline void TPodFifo<T>::pack(T* const dst, const T* const src) noexcept
         }
     }
     m_read_index = 0u;
+}
+
+
+template<typename T>
+inline void TPodFifo<T>::move_from(TPodFifo&& src) noexcept
+{
+    m_token = std::move(src.m_token);
+    m_size = src.m_size;
+    m_capacity = src.m_capacity;
+    m_read_index = src.m_read_index;
+    src.m_size = 0u;
+    src.m_capacity = 0u;
+    src.m_read_index = 0u;
 }
 
 #endif  //  #ifndef TPOD_FIFO_HPP_INCLUDED
