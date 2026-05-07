@@ -16,9 +16,9 @@
 #include <cstdint>      //  std::uint32_t
 #include <cstring>      //  std::memset
 
-#include "debug/debug.hpp"
-#include "platform/platform_defines.hpp"
 #include "platform/threading/exclusive_lock.hpp"
+#include "platform/platform_defines.hpp"
+#include "debug/debug.hpp"
 
 #if defined(MV_PLATFORM_WINDOWS)
 #include "platform/windows_include.hpp"
@@ -192,11 +192,8 @@ bool CExclusiveLock::initialise_native_lock() noexcept
 {
 #if defined(MV_PLATFORM_WINDOWS)
 
-    static_assert((sizeof(SRWLOCK) <= k_opaque_size),
-        "CExclusiveLock storage is too small for SRWLOCK.");
-
-    static_assert((alignof(SRWLOCK) <= k_opaque_alignment),
-        "CExclusiveLock alignment is too small for SRWLOCK.");
+    static_assert((sizeof(SRWLOCK) <= k_opaque_size), "CExclusiveLock storage is too small for SRWLOCK.");
+    static_assert((alignof(SRWLOCK) <= k_opaque_alignment), "CExclusiveLock alignment is too small for SRWLOCK.");
 
     clear();
 
@@ -206,11 +203,8 @@ bool CExclusiveLock::initialise_native_lock() noexcept
 
 #elif defined(MV_PLATFORM_HAS_PTHREADS)
 
-    static_assert((sizeof(pthread_mutex_t) <= k_opaque_size),
-        "CExclusiveLock storage is too small for pthread_mutex_t.");
-
-    static_assert((alignof(pthread_mutex_t) <= k_opaque_alignment),
-        "CExclusiveLock alignment is too small for pthread_mutex_t.");
+    static_assert((sizeof(pthread_mutex_t) <= k_opaque_size), "CExclusiveLock storage is too small for pthread_mutex_t.");
+    static_assert((alignof(pthread_mutex_t) <= k_opaque_alignment), "CExclusiveLock alignment is too small for pthread_mutex_t.");
 
     clear();
 

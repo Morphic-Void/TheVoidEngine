@@ -199,6 +199,9 @@ void wake_all_waiters(const std::atomic<std::uint32_t>& word) noexcept
 
 #if defined(MV_PLATFORM_ANDROID_ONLY)
 
+//  Android wait-word support is expected to use the Linux futex path, or a
+//  near-equivalent Android futex syscall path. It remains disabled until the
+//  implementation has been validated on target Android / Quest hardware.
 #error "platform::threading wait-word selected Android, but Android native wait-word support has not been implemented yet."
 
 #elif defined(MV_PLATFORM_APPLE) && !defined(MV_PLATFORM_APPLE_SUPPORTED)
