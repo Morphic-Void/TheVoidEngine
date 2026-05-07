@@ -291,11 +291,35 @@
     <ClInclude Include="include\platform\path\native_path.hpp">
       <Filter>include\platform\path</Filter>
     </ClInclude>
-    <ClInclude Include="include\platform\threading\primitives.hpp">
+    <ClInclude Include="include\threading\wait_predicates.hpp">
+      <Filter>include\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\counting_semaphore.hpp">
+      <Filter>include\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\threading\exclusive_lock.hpp">
       <Filter>include\platform\threading</Filter>
     </ClInclude>
-    <ClInclude Include="include\threading\predicate_wait_helpers.hpp">
-      <Filter>include\threading</Filter>
+    <ClInclude Include="include\platform\threading\hw_thread_count.hpp">
+      <Filter>include\platform\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\threading\native_thread_id.hpp">
+      <Filter>include\platform\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\threading\processor_relax.hpp">
+      <Filter>include\platform\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\threading\wait_word.hpp">
+      <Filter>include\platform\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\platform_defines.hpp">
+      <Filter>include\platform</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\windows_include.hpp">
+      <Filter>include\platform</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\threading\platform_threading.hpp">
+      <Filter>include\platform\threading</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -347,7 +371,22 @@
     <ClCompile Include="src\platform\path\native_path.cpp">
       <Filter>src\platform\path</Filter>
     </ClCompile>
-    <ClCompile Include="src\platform\threading\primitives.cpp">
+    <ClCompile Include="src\threading\counting_semaphore.cpp">
+      <Filter>src\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\threading\exclusive_lock.cpp">
+      <Filter>src\platform\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\threading\hw_thread_count.cpp">
+      <Filter>src\platform\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\threading\native_thread_id.cpp">
+      <Filter>src\platform\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\threading\processor_relax.cpp">
+      <Filter>src\platform\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\threading\wait_word.cpp">
       <Filter>src\platform\threading</Filter>
     </ClCompile>
   </ItemGroup>

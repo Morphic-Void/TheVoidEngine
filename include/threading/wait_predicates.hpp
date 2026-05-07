@@ -2,7 +2,7 @@
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
 //
-//  File:   predicate_wait_helpers.hpp
+//  File:   wait_predicates.hpp
 //  Author: Ritchie Brannan
 //  Date:   5 May 26
 //
@@ -17,55 +17,55 @@
 
 #pragma once
 
-#ifndef PREDICATE_WAIT_HELPERS_HPP_INCLUDED
-#define PREDICATE_WAIT_HELPERS_HPP_INCLUDED
+#ifndef WAIT_PREDICATES_HPP_INCLUDED
+#define WAIT_PREDICATES_HPP_INCLUDED
 
 #include <atomic>       //  std::atomic
 #include <cstdint>      //  std::uint32_t
 
-#include "platform/threading/primitives.hpp"
+#include "platform/threading/wait_word.hpp"
 
 namespace threading
 {
 
-//  Wait until word is observed to equal value.
+//  Wait until word is seen to equal value.
 //
 //  This waits for a specific visible value, not just for progress.
 //  word must remain alive and stable for the duration of the wait.
-inline void wait_until_equal(const std::atomic<std::uint32_t>* const word, const std::uint32_t value) noexcept
+inline void wait_until_equal(const std::atomic<std::uint32_t>& word, const std::uint32_t value) noexcept
 {
     for (;;)
     {
-        const std::uint32_t current = word->load(std::memory_order_acquire);
-
-        if (current == value)
+        const std::uint32_t seen = word.load(std::memory_order_acquire);
+    
+        if (seen == value)
         {
             break;
         }
-
-        platform::threading::wait_while_equal(word, current);
+    
+        platform::threading::wait_while_equal(word, seen);
     }
 }
 
-//  Wait until word is observed to differ from value.
-//  Returns the observed non-equal value.
+//  Wait until word is seen to differ from value.
+//  Returns the seen non-equal value.
 //
 //  word must remain alive and stable for the duration of the wait.
-inline std::uint32_t wait_until_not_equal(const std::atomic<std::uint32_t>* const word, const std::uint32_t value) noexcept
+inline std::uint32_t wait_until_not_equal(const std::atomic<std::uint32_t>& word, const std::uint32_t value) noexcept
 {
     for (;;)
     {
-        const std::uint32_t current = word->load(std::memory_order_acquire);
-
-        if (current != value)
+        const std::uint32_t seen = word.load(std::memory_order_acquire);
+    
+        if (seen != value)
         {
-            return current;
+            return seen;
         }
-
+    
         platform::threading::wait_while_equal(word, value);
     }
 }
 
 }   //  namespace threading
 
-#endif  //  #ifndef PREDICATE_WAIT_HELPERS_HPP_INCLUDED
+#endif  //  #ifndef WAIT_PREDICATES_HPP_INCLUDED

@@ -164,13 +164,18 @@
     <ClCompile Include="src\platform\filesystem\log.cpp" />
     <ClCompile Include="src\platform\module\binding.cpp" />
     <ClCompile Include="src\platform\path\native_path.cpp" />
-    <ClCompile Include="src\platform\threading\primitives.cpp" />
+    <ClCompile Include="src\platform\threading\exclusive_lock.cpp" />
+    <ClCompile Include="src\platform\threading\hw_thread_count.cpp" />
+    <ClCompile Include="src\platform\threading\native_thread_id.cpp" />
+    <ClCompile Include="src\platform\threading\processor_relax.cpp" />
+    <ClCompile Include="src\platform\threading\wait_word.cpp" />
     <ClCompile Include="src\tests\run_tests.cpp" />
     <ClCompile Include="src\tests\TOrderedSlots_test_harness.cpp" />
     <ClCompile Include="src\tests\TOwningTransport_test_suite.cpp" />
     <ClCompile Include="src\tests\TQueueTransport_test_suite.cpp" />
     <ClCompile Include="src\tests\TRingTransport_test_suite.cpp" />
     <ClCompile Include="src\tests\TUnorderedSlots_test_harness.cpp" />
+    <ClCompile Include="src\threading\counting_semaphore.cpp" />
     <ClCompile Include="src\types\fp16data_t.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -199,7 +204,14 @@
     <ClInclude Include="include\platform\filesystem\log.hpp" />
     <ClInclude Include="include\platform\module\binding.hpp" />
     <ClInclude Include="include\platform\path\native_path.hpp" />
-    <ClInclude Include="include\platform\threading\primitives.hpp" />
+    <ClInclude Include="include\platform\platform_defines.hpp" />
+    <ClInclude Include="include\platform\threading\exclusive_lock.hpp" />
+    <ClInclude Include="include\platform\threading\hw_thread_count.hpp" />
+    <ClInclude Include="include\platform\threading\native_thread_id.hpp" />
+    <ClInclude Include="include\platform\threading\platform_threading.hpp" />
+    <ClInclude Include="include\platform\threading\processor_relax.hpp" />
+    <ClInclude Include="include\platform\threading\wait_word.hpp" />
+    <ClInclude Include="include\platform\windows_include.hpp" />
     <ClInclude Include="include\system\system_ids.hpp" />
     <ClInclude Include="include\tests\run_tests.hpp" />
     <ClInclude Include="include\tests\TOrderedSlots_test_harness.hpp" />
@@ -207,7 +219,8 @@
     <ClInclude Include="include\tests\TQueueTransport_test_suite.hpp" />
     <ClInclude Include="include\tests\TRingTransport_test_suite.hpp" />
     <ClInclude Include="include\tests\TUnorderedSlots_test_harness.hpp" />
-    <ClInclude Include="include\threading\predicate_wait_helpers.hpp" />
+    <ClInclude Include="include\threading\counting_semaphore.hpp" />
+    <ClInclude Include="include\threading\wait_predicates.hpp" />
     <ClInclude Include="include\threading\transports\bundles\TBulkBundle.hpp" />
     <ClInclude Include="include\threading\transports\bundles\TOwningBundle.hpp" />
     <ClInclude Include="include\threading\transports\bundles\TQueueBundle.hpp" />
