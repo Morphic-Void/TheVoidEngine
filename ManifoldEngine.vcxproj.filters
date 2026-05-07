@@ -291,12 +291,6 @@
     <ClInclude Include="include\platform\path\native_path.hpp">
       <Filter>include\platform\path</Filter>
     </ClInclude>
-    <ClInclude Include="include\threading\wait_predicates.hpp">
-      <Filter>include\threading</Filter>
-    </ClInclude>
-    <ClInclude Include="include\threading\counting_semaphore.hpp">
-      <Filter>include\threading</Filter>
-    </ClInclude>
     <ClInclude Include="include\platform\threading\exclusive_lock.hpp">
       <Filter>include\platform\threading</Filter>
     </ClInclude>
@@ -319,6 +313,9 @@
       <Filter>include\platform</Filter>
     </ClInclude>
     <ClInclude Include="include\platform\threading\platform_threading.hpp">
+      <Filter>include\platform\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\threading\counting_semaphore.hpp">
       <Filter>include\platform\threading</Filter>
     </ClInclude>
   </ItemGroup>
@@ -371,9 +368,6 @@
     <ClCompile Include="src\platform\path\native_path.cpp">
       <Filter>src\platform\path</Filter>
     </ClCompile>
-    <ClCompile Include="src\threading\counting_semaphore.cpp">
-      <Filter>src\threading</Filter>
-    </ClCompile>
     <ClCompile Include="src\platform\threading\exclusive_lock.cpp">
       <Filter>src\platform\threading</Filter>
     </ClCompile>
@@ -387,6 +381,9 @@
       <Filter>src\platform\threading</Filter>
     </ClCompile>
     <ClCompile Include="src\platform\threading\wait_word.cpp">
+      <Filter>src\platform\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\threading\counting_semaphore.cpp">
       <Filter>src\platform\threading</Filter>
     </ClCompile>
   </ItemGroup>

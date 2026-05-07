@@ -21,7 +21,7 @@
 #include "platform/windows_include.hpp"
 #endif
 
-#if defined(MV_PLATFORM_APPLE)
+#if defined(MV_PLATFORM_APPLE_SUPPORTED)
 #include <pthread.h>
 #endif
 
@@ -47,7 +47,7 @@ CPlatformThreadId query_current_thread_id() noexcept
         ? CPlatformThreadId(static_cast<std::uint64_t>(id))
         : CPlatformThreadId();
 
-#elif defined(MV_PLATFORM_APPLE)
+#elif defined(MV_PLATFORM_APPLE_SUPPORTED)
 
     std::uint64_t id = 0u;
     const int result = pthread_threadid_np(nullptr, &id);

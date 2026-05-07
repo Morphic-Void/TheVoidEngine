@@ -29,8 +29,6 @@
 #include "threading/transports/bundles/TRingBundle.hpp"
 #include "threading/transports/bundles/TQueueBundle.hpp"
 #include "threading/transports/bundles/TOwningBundle.hpp"
-#include "threading/counting_semaphore.hpp"
-#include "threading/wait_predicates.hpp"
 #include "platform/filesystem/internal/file_utils.hpp"
 #include "platform/filesystem/file.hpp"
 #include "platform/filesystem/log.hpp"

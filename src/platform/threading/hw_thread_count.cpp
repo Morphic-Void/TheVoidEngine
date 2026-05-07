@@ -22,7 +22,7 @@
 #include "platform/windows_include.hpp"
 #endif
 
-#if defined(MV_PLATFORM_APPLE)
+#if defined(MV_PLATFORM_APPLE_SUPPORTED)
 #include <sys/sysctl.h>
 #endif
 
@@ -87,7 +87,7 @@ std::uint32_t query_hardware_thread_count() noexcept
         }
     }
 
-#elif defined(MV_PLATFORM_APPLE)
+#elif defined(MV_PLATFORM_APPLE_SUPPORTED)
 
     static const char* const k_query_names[3] =
     {
