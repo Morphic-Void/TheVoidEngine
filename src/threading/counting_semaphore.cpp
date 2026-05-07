@@ -4,7 +4,7 @@
 //
 //  File:   counting_semaphore.cpp
 //  Author: Ritchie Brannan
-//  Date:   5 May 26
+//  Date:   7 May 26
 //
 //  Requirements:
 //  - Requires C++17 or later.
@@ -12,30 +12,51 @@
 //
 //  Process-local counting semaphore implementation.
 
+#include <cstdint>      //  std::uint32_t
+
 #include "threading/counting_semaphore.hpp"
 #include "platform/threading/wait_word.hpp"
 
 namespace threading
 {
 
-constexpr std::uint32_t k_semaphore_max_count = ~std::uint32_t{ 0 };
+static constexpr std::uint32_t k_shutdown_signalled_count = ~std::uint32_t{ 0u };
+static constexpr std::uint32_t k_max_permit_count = k_shutdown_signalled_count - 1u;
 
-void CCountingSemaphore::initialise(const std::uint32_t initial_count) noexcept
+//==============================================================================
+//  Construction and destruction
+//==============================================================================
+
+CCountingSemaphore::CCountingSemaphore() noexcept : m_count(0u)
 {
-    m_count.store(initial_count, std::memory_order_relaxed);
 }
 
-void CCountingSemaphore::destroy() noexcept
+CCountingSemaphore::~CCountingSemaphore() noexcept
 {
-    m_count.store(0u, std::memory_order_relaxed);
+    signal_shutdown();
 }
+
+//==============================================================================
+//  State queries
+//==============================================================================
 
 std::uint32_t CCountingSemaphore::query_count() const noexcept
 {
-    return m_count.load(std::memory_order_relaxed);
+    const std::uint32_t count = m_count.load(std::memory_order_relaxed);
+
+    return (count == k_shutdown_signalled_count) ? 0u : count;
 }
 
-void CCountingSemaphore::acquire() noexcept
+bool CCountingSemaphore::is_shutdown_signalled() const noexcept
+{
+    return m_count.load(std::memory_order_acquire) == k_shutdown_signalled_count;
+}
+
+//==============================================================================
+//  Consumer operations
+//==============================================================================
+
+bool CCountingSemaphore::acquire() noexcept
 {
     std::uint32_t seen = m_count.load(std::memory_order_acquire);
 
@@ -48,12 +69,17 @@ void CCountingSemaphore::acquire() noexcept
             seen = m_count.load(std::memory_order_acquire);
         }
 
+        if (seen == k_shutdown_signalled_count)
+        {
+            return false;
+        }
+
         const std::uint32_t wanted = seen - 1u;
 
-        if (m_count.compare_exchange_weak(seen, wanted,
-            std::memory_order_acquire, std::memory_order_relaxed))
+        if (m_count.compare_exchange_weak(
+            seen, wanted, std::memory_order_acquire, std::memory_order_relaxed))
         {
-            break;
+            return true;
         }
 
         //  On failure, seen has been updated with the current m_count.
@@ -64,12 +90,12 @@ bool CCountingSemaphore::try_acquire() noexcept
 {
     std::uint32_t seen = m_count.load(std::memory_order_acquire);
 
-    while (seen != 0u)
+    while ((seen != 0u) && (seen != k_shutdown_signalled_count))
     {
         const std::uint32_t wanted = seen - 1u;
 
-        if (m_count.compare_exchange_weak(seen, wanted,
-            std::memory_order_acquire, std::memory_order_relaxed))
+        if (m_count.compare_exchange_weak(
+            seen, wanted, std::memory_order_acquire, std::memory_order_relaxed))
         {
             return true;
         }
@@ -79,6 +105,10 @@ bool CCountingSemaphore::try_acquire() noexcept
 
     return false;
 }
+
+//==============================================================================
+//  Producer operations
+//==============================================================================
 
 bool CCountingSemaphore::release(const std::uint32_t release_count) noexcept
 {
@@ -91,15 +121,20 @@ bool CCountingSemaphore::release(const std::uint32_t release_count) noexcept
 
     for (;;)
     {
-        if (release_count > (k_semaphore_max_count - seen))
+        if (seen == k_shutdown_signalled_count)
+        {
+            return false;
+        }
+
+        if (release_count > (k_max_permit_count - seen))
         {
             return false;
         }
 
         const std::uint32_t wanted = seen + release_count;
 
-        if (m_count.compare_exchange_weak(seen, wanted,
-            std::memory_order_release, std::memory_order_relaxed))
+        if (m_count.compare_exchange_weak(
+            seen, wanted, std::memory_order_release, std::memory_order_relaxed))
         {
             if (release_count == 1u)
             {
@@ -114,6 +149,25 @@ bool CCountingSemaphore::release(const std::uint32_t release_count) noexcept
         }
 
         //  On failure, seen has been updated with the current m_count.
+    }
+}
+
+//==============================================================================
+//  Producer state management
+//==============================================================================
+
+void CCountingSemaphore::restart() noexcept
+{
+    m_count.store(0u, std::memory_order_relaxed);
+}
+
+void CCountingSemaphore::signal_shutdown() noexcept
+{
+    const std::uint32_t previous = m_count.exchange(k_shutdown_signalled_count, std::memory_order_acq_rel);
+
+    if (previous != k_shutdown_signalled_count)
+    {
+        platform::threading::wake_all_waiters(m_count);
     }
 }
 
