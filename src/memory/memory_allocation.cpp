@@ -1,3 +1,4 @@
+
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
 // 
@@ -29,7 +30,7 @@
 #include <cstddef>      //  std::size_t
 #include <cstdint>      //  std::uint32_t
 #include <mutex>        //  std::mutex, std::lock_guard
-#include <new>          //  std::align_val_t, std::nothrow, aligned operator new[]/delete[]
+#include <new>          //  std::align_val_t
 #include <thread>       //  std::this_thread::yield
 
 #include "memory/memory_allocation.hpp"
@@ -195,43 +196,6 @@ void byte_deallocate(void* const ptr, const std::size_t align) noexcept
     }
 
     s_live_allocations.fetch_sub(1u, std::memory_order_acq_rel);
-}
-
-//==============================================================================
-//  Default system allocator
-//==============================================================================
-
-class CSystemAllocator : public IAllocator
-{
-public:
-    CSystemAllocator() = default;
-    ~CSystemAllocator() = default;
-
-    virtual void* byte_allocate(const std::size_t bytes, const std::size_t align) noexcept override final
-    {
-        return ::operator new[](bytes, alignment_policy(align), std::nothrow);
-    }
-
-    virtual void byte_deallocate(void* const ptr, const std::size_t align) noexcept override final
-    {
-        if (ptr != nullptr)
-        {
-            ::operator delete[](ptr, alignment_policy(align));
-        }
-    }
-};
-
-bool install_system_allocator(const std::size_t system_id) noexcept
-{
-    static CSystemAllocator allocator;
-    bool success = false;
-    if ((system_ids::get_module_id(system_id) == module_ids::executable) &&
-        (system_ids::get_thread_id(system_id) == thread_ids::host))
-    {
-        success = set_allocator(&allocator);
-    }
-    MV_HARD_ASSERT(success);
-    return success;
 }
 
 }   //  namespace memory

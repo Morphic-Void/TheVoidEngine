@@ -159,6 +159,7 @@
     <ClCompile Include="src\image\codec\tga.cpp" />
     <ClCompile Include="src\main\ManifoldEngine.cpp" />
     <ClCompile Include="src\memory\memory_allocation.cpp" />
+    <ClCompile Include="src\memory\host_allocator.cpp" />
     <ClCompile Include="src\platform\filesystem\file.cpp" />
     <ClCompile Include="src\platform\filesystem\internal\file_utils.cpp" />
     <ClCompile Include="src\platform\filesystem\log.cpp" />
@@ -198,6 +199,7 @@
     <ClInclude Include="include\debug\debug.hpp" />
     <ClInclude Include="include\image\codec\tga.hpp" />
     <ClInclude Include="include\memory\memory_allocation.hpp" />
+    <ClInclude Include="include\memory\host_allocator.hpp" />
     <ClInclude Include="include\memory\memory_primitives.hpp" />
     <ClInclude Include="include\memory\memory_typeless.hpp" />
     <ClInclude Include="include\platform\filesystem\file.hpp" />

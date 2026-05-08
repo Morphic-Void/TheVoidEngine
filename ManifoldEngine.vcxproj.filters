@@ -321,6 +321,9 @@
     <ClInclude Include="include\platform\threading\thread_lifetime.hpp">
       <Filter>include\platform\threading</Filter>
     </ClInclude>
+    <ClInclude Include="include\memory\host_allocator.hpp">
+      <Filter>include\memory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main\ManifoldEngine.cpp">
@@ -391,6 +394,9 @@
     </ClCompile>
     <ClCompile Include="src\platform\threading\thread_lifetime.cpp">
       <Filter>src\platform\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="src\memory\host_allocator.cpp">
+      <Filter>src\memory</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -29,6 +29,8 @@
 #include "threading/transports/bundles/TRingBundle.hpp"
 #include "threading/transports/bundles/TQueueBundle.hpp"
 #include "threading/transports/bundles/TOwningBundle.hpp"
+#include "memory/host_allocator.hpp"
+#include "memory/memory_allocation.hpp"
 #include "platform/filesystem/internal/file_utils.hpp"
 #include "platform/filesystem/file.hpp"
 #include "platform/filesystem/log.hpp"
@@ -46,9 +48,13 @@ int main()
 {
     int ret = 0;
     constexpr std::size_t executable_host_system_id = system_ids::make_system_id(module_ids::executable, thread_ids::host);
-    if (MV_FAIL_SAFE_ASSERT(memory::install_system_allocator(executable_host_system_id)))
+    memory::IAllocator* host_allocator = memory::get_the_host_allocator(executable_host_system_id);
+    if (MV_FAIL_SAFE_ASSERT(host_allocator != nullptr))
     {
-        ret = run_tests();
+        if (MV_FAIL_SAFE_ASSERT(memory::set_allocator(host_allocator)))
+        {
+            ret = run_tests();
+        }
     }
     return ret;
 }
