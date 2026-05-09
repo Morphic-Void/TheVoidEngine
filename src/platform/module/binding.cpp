@@ -4,102 +4,141 @@
 //
 //  File:   binding.cpp
 //  Author: Ritchie Brannan
-//  Date:   25 Apr 26
+//  Date:   9 May 26
 //
 //  Requirements:
 //  - Requires C++17 or later.
 //  - No exceptions.
 //
-//  Module (DLL/SO/DYLIB) binding (load/query/unload)
+//  Module (DLL/SO/DYLIB) binding.
 
 #include "platform/module/binding.hpp"
 #include "platform/platform_defines.hpp"
 
 #if MV_PLATFORM_WINDOWS
-    #include "platform/windows_include.hpp"
+#include "platform/windows_include.hpp"
 #else
-    #include <dlfcn.h>
+#include <dlfcn.h>
 #endif
 
 namespace platform::module
 {
 
-const char* getModulesStdExt() noexcept
+const char* get_modules_std_ext() noexcept
 {
 #if MV_PLATFORM_WINDOWS
     static const char* k_ext = "dll";
 #elif MV_PLATFORM_MAC_OS
     static const char* k_ext = "dylib";
-#else   //  default, assumes _POSIX_VERSION or __linux__ or similar
+#else
     static const char* k_ext = "so";
 #endif
+
     return k_ext;
 }
 
-CPlatformModule bindModule(const platform::path::NativePath& path) noexcept
+CPlatformModule::~CPlatformModule() noexcept
 {
-    CPlatformModule module;
+    (void)unbind();
+}
 
-    if (!path.is_empty())
+CPlatformModule::CPlatformModule(CPlatformModule&& other) noexcept : m_native_handle(other.m_native_handle)
+{
+    other.m_native_handle = nullptr;
+}
+
+CPlatformModule& CPlatformModule::operator=(CPlatformModule&& other) noexcept
+{
+    if (this != &other)
+    {
+        (void)unbind();
+
+        m_native_handle = other.m_native_handle;
+        other.m_native_handle = nullptr;
+    }
+    return *this;
+}
+
+bool CPlatformModule::bind(const platform::path::NativePath& path) noexcept
+{
+    bool success = false;
+
+    if ((m_native_handle == nullptr) && !path.is_empty())
     {
 #if MV_PLATFORM_WINDOWS
         HMODULE handle = LoadLibraryW(path.data());
+
         if (handle != nullptr)
         {
-            module.native_handle = reinterpret_cast<void*>(handle);
+            m_native_handle = reinterpret_cast<void*>(handle);
+            success = true;
         }
 #else
         void* handle = dlopen(path.data(), RTLD_NOW | RTLD_LOCAL);
+
         if (handle != nullptr)
         {
-            module.native_handle = handle;
+            m_native_handle = handle;
+            success = true;
         }
 #endif
     }
 
-    return module;
+    return success;
 }
 
-void* findModuleSymbol(const CPlatformModule& module, const char* const symbol_name) noexcept
+bool CPlatformModule::unbind() noexcept
+{
+    bool success = true;
+
+    if (m_native_handle != nullptr)
+    {
+#if MV_PLATFORM_WINDOWS
+        HMODULE handle = reinterpret_cast<HMODULE>(m_native_handle);
+        success = (FreeLibrary(handle) != 0);
+#else
+        success = (dlclose(m_native_handle) == 0);
+#endif
+
+        if (success)
+        {
+            m_native_handle = nullptr;
+        }
+    }
+
+    return success;
+}
+
+bool CPlatformModule::is_bound() const noexcept
+{
+    return m_native_handle != nullptr;
+}
+
+void* CPlatformModule::find_symbol(const char* const symbol_name) const noexcept
 {
     void* symbol = nullptr;
 
-    if ((module.native_handle != nullptr) && (symbol_name != nullptr) && (symbol_name[0] != 0))
+    if ((m_native_handle != nullptr) && (symbol_name != nullptr) && (symbol_name[0] != 0))
     {
 #if MV_PLATFORM_WINDOWS
-        HMODULE handle = reinterpret_cast<HMODULE>(module.native_handle);
+        HMODULE handle = reinterpret_cast<HMODULE>(m_native_handle);
         FARPROC proc = GetProcAddress(handle, symbol_name);
+
         if (proc != nullptr)
         {
             symbol = reinterpret_cast<void*>(proc);
         }
 #else
-        symbol = dlsym(module.native_handle, symbol_name);
+        symbol = dlsym(m_native_handle, symbol_name);
 #endif
     }
 
     return symbol;
 }
 
-bool unbindModule(CPlatformModule& module) noexcept
+void* CPlatformModule::native_handle() const noexcept
 {
-    bool success = true;
-
-    if (module.native_handle != nullptr)
-    {
-#if defined(_WIN32) || defined(_WIN64)
-        HMODULE handle = reinterpret_cast<HMODULE>(module.native_handle);
-        success = (FreeLibrary(handle) != 0);
-#else
-        success = (dlclose(module.native_handle) == 0);
-#endif
-        if (success)
-        {
-            module.native_handle = nullptr;
-        }
-    }
-
-    return success;
+    return m_native_handle;
 }
 
 }   //  namespace platform::module

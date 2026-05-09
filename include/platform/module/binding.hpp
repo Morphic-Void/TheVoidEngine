@@ -4,15 +4,17 @@
 //
 //  File:   binding.hpp
 //  Author: Ritchie Brannan
-//  Date:   25 Apr 26
+//  Date:   9 May 26
 //
 //  Requirements:
 //  - Requires C++17 or later.
 //  - No exceptions.
 //
-//  Module (DLL/SO/DYLIB) binding (load/query/unload)
+//  Module (DLL/SO/DYLIB) binding.
 //
-//  Note: getModulesStdExt() returns the extension without any preceding '.'
+//  CPlatformModule owns a native module handle. It is move-only.
+//
+//  Note: get_modules_std_ext() returns the extension without any preceding '.'
 
 #pragma once
 
@@ -24,12 +26,35 @@
 namespace platform::module
 {
 
-struct CPlatformModule { void* native_handle = nullptr; };
+const char* get_modules_std_ext() noexcept;
 
-const char* getModulesStdExt() noexcept;
-CPlatformModule bindModule(const platform::path::NativePath& path) noexcept;
-void* findModuleSymbol(const CPlatformModule& module, const char* const symbol_name) noexcept;
-bool unbindModule(CPlatformModule& module) noexcept;
+class CPlatformModule
+{
+public:
+
+    //  Default and deleted lifetime
+    CPlatformModule() noexcept = default;
+    CPlatformModule(const CPlatformModule& other) = delete;
+    CPlatformModule& operator=(const CPlatformModule& other) = delete;
+
+    //  Move lifetime and destructor
+    CPlatformModule(CPlatformModule&& other) noexcept;
+    CPlatformModule& operator=(CPlatformModule&& other) noexcept;
+    ~CPlatformModule() noexcept;
+
+    //  Binding
+    [[nodiscard]] bool bind(const platform::path::NativePath& path) noexcept;
+    [[nodiscard]] bool unbind() noexcept;
+
+    //  Queries
+    [[nodiscard]] bool is_bound() const noexcept;
+    [[nodiscard]] void* find_symbol(const char* const symbol_name) const noexcept;
+    [[nodiscard]] void* native_handle() const noexcept;
+
+private:
+
+    void* m_native_handle = nullptr;
+};
 
 }   //  namespace platform::module
 
