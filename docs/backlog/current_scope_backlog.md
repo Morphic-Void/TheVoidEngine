@@ -6,9 +6,12 @@ Threading support primitives:
 2a. DONE: Implement a hardware thread identification query
 3. DONE: Implement mutex wrapper
 5. DONE: Decide whether semaphore is needed now
+7. DONE: Implement 2-phase parking gate
 8. DONE: Define native thread entry contract
 9. DONE: Implement native thread creation wrapper
 10. DONE: Implement minimal thread start trampoline
+
+11. DEFERRED UNTIL PROJECT TESTABLE ON ALL SUPPORTED PLATFORMS: Add smoke/stress tests around each layer
 
 DONE: Reorganise all the cross-platform support into the platform directories
 DONE: Move the tga support into image/codec/
@@ -18,18 +21,19 @@ DONE: cleanup the platform defines
 DONE: stop leakage of platform defines
 DONE: use Linux path for Android wait word but add additional defines
 
+DONE: CStaticLookup for provisioning and other data uintptr_t based
+
+DONE - DECIDED TO IGNORE EVERYTHING BUT PRIORITY AT THIS STAGE: add affinity, priority and numa identity
+
 4. IN PROGRESS - (CONSIDERING ANDROID OPTIONS): Implement wait/wake wrapper or fallback-compatible wait primitive
 6. IN PROGRESS - (IT IS NEEDED AS FALLBACK): Implement semaphore wrapper if needed
-7. IN PROGRESS - (AS PART OF THE FALLBACK): Implement 2-phase parking gate
-11. DEFERRED UNTIL PROJECT TESTABLE ON ALL SUPPORTED PLATFORMS: Add smoke/stress tests around each layer
 
 Random tasks:
 
 Add the tga testing
 
-wrapped phase gate, wait predicates and counter semaphore
+IN PROGRESS: Wrapped phase gate (done), wait predicates and counter semaphore
 
-add affinity, priority and numa identity
+Thread provisioning and other data access structures
 
-DONE: CStaticLookup for provisioning and other data uintptr_t based
-TODO: - then start on the initialisation and structures
+TLS definition
