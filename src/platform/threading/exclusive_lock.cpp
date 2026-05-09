@@ -50,36 +50,26 @@ CExclusiveLock::~CExclusiveLock() noexcept
 
     const std::uint32_t waiter_count = m_waiter_count.load(std::memory_order_acquire);
 
-    if (!MV_FAIL_SAFE_ASSERT(waiter_count == 0u))
+    if (MV_FAIL_SAFE_ASSERT(waiter_count == 0u))
     {
-        return;
+        if (MV_FAIL_SAFE_ASSERT(try_acquire_owner_thread_id_gate()))
+        {
+            const bool is_owned = m_owner_thread_id.is_valid();
+
+            release_owner_thread_id_gate();
+
+            if (MV_FAIL_SAFE_ASSERT(!is_owned))
+            {
+                if (MV_FAIL_SAFE_ASSERT(destroy_native_lock()))
+                {
+                    m_valid = false;
+                    m_owner_thread_id = CPlatformThreadId();
+                    m_waiter_count.store(0u, std::memory_order_release);
+                    clear();
+                }
+            }
+        }
     }
-
-    if (!MV_FAIL_SAFE_ASSERT(try_acquire_owner_thread_id_gate()))
-    {
-        return;
-    }
-
-    const bool is_unowned = !m_owner_thread_id.is_valid();
-
-    if (!MV_FAIL_SAFE_ASSERT(is_unowned))
-    {
-        release_owner_thread_id_gate();
-        return;
-    }
-
-    release_owner_thread_id_gate();
-
-    if (!MV_FAIL_SAFE_ASSERT(destroy_native_lock()))
-    {
-        return;
-    }
-
-    m_valid = false;
-    m_owner_thread_id = CPlatformThreadId();
-    m_waiter_count.store(0u, std::memory_order_release);
-
-    clear();
 }
 
 //==============================================================================
