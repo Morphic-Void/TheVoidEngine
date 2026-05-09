@@ -2,7 +2,7 @@
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
 //
-//  File:   counting_semaphore.hpp
+//  File:   wait_word_semaphore.hpp
 //  Author: Ritchie Brannan
 //  Date:   7 May 26
 //
@@ -33,8 +33,8 @@
 
 #pragma once
 
-#ifndef COUNTING_SEMAPHORE_HPP_INCLUDED
-#define COUNTING_SEMAPHORE_HPP_INCLUDED
+#ifndef WAIT_WORD_SEMAPHORE_HPP_INCLUDED
+#define WAIT_WORD_SEMAPHORE_HPP_INCLUDED
 
 #include <atomic>       //  std::atomic
 #include <cstdint>      //  std::uint32_t
@@ -46,19 +46,19 @@ namespace threading
 //  Counting semaphore
 //==============================================================================
 
-class CCountingSemaphore
+class CWaitWordSemaphore
 {
 public:
 
     //  Deleted lifetime
-    CCountingSemaphore(const CCountingSemaphore&) = delete;
-    CCountingSemaphore& operator=(const CCountingSemaphore&) = delete;
-    CCountingSemaphore(CCountingSemaphore&&) = delete;
-    CCountingSemaphore& operator=(CCountingSemaphore&&) = delete;
+    CWaitWordSemaphore(const CWaitWordSemaphore&) = delete;
+    CWaitWordSemaphore& operator=(const CWaitWordSemaphore&) = delete;
+    CWaitWordSemaphore(CWaitWordSemaphore&&) = delete;
+    CWaitWordSemaphore& operator=(CWaitWordSemaphore&&) = delete;
 
     //  Construction and destruction
-    CCountingSemaphore() noexcept;
-    ~CCountingSemaphore() noexcept;
+    CWaitWordSemaphore() noexcept;
+    ~CWaitWordSemaphore() noexcept;
 
     //  State queries
     std::uint32_t query_count() const noexcept;
@@ -82,4 +82,4 @@ private:
 
 }   //  namespace threading
 
-#endif  //  #ifndef COUNTING_SEMAPHORE_HPP_INCLUDED
+#endif  //  #ifndef WAIT_WORD_SEMAPHORE_HPP_INCLUDED

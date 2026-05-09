@@ -165,7 +165,7 @@
     <ClCompile Include="src\platform\filesystem\log.cpp" />
     <ClCompile Include="src\platform\module\binding.cpp" />
     <ClCompile Include="src\platform\path\native_path.cpp" />
-    <ClCompile Include="src\platform\threading\counting_semaphore.cpp" />
+    <ClCompile Include="src\platform\threading\wait_word_semaphore.cpp" />
     <ClCompile Include="src\platform\threading\exclusive_lock.cpp" />
     <ClCompile Include="src\platform\threading\hw_thread_count.cpp" />
     <ClCompile Include="src\platform\threading\native_thread_id.cpp" />
@@ -211,7 +211,7 @@
     <ClInclude Include="include\platform\module\binding.hpp" />
     <ClInclude Include="include\platform\path\native_path.hpp" />
     <ClInclude Include="include\platform\platform_defines.hpp" />
-    <ClInclude Include="include\platform\threading\counting_semaphore.hpp" />
+    <ClInclude Include="include\platform\threading\wait_word_semaphore.hpp" />
     <ClInclude Include="include\platform\threading\exclusive_lock.hpp" />
     <ClInclude Include="include\platform\threading\hw_thread_count.hpp" />
     <ClInclude Include="include\platform\threading\native_thread_id.hpp" />

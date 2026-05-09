@@ -2,7 +2,7 @@
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
 //
-//  File:   counting_semaphore.cpp
+//  File:   wait_word_semaphore.cpp
 //  Author: Ritchie Brannan
 //  Date:   7 May 26
 //
@@ -14,7 +14,7 @@
 
 #include <cstdint>      //  std::uint32_t
 
-#include "platform/threading/counting_semaphore.hpp"
+#include "platform/threading/wait_word_semaphore.hpp"
 #include "platform/threading/wait_word.hpp"
 #include "platform/platform_defines.hpp"
 
@@ -28,11 +28,11 @@ static constexpr std::uint32_t k_max_permit_count = k_shutdown_signalled_count -
 //  Construction and destruction
 //==============================================================================
 
-CCountingSemaphore::CCountingSemaphore() noexcept : m_count(0u)
+CWaitWordSemaphore::CWaitWordSemaphore() noexcept : m_count(0u)
 {
 }
 
-CCountingSemaphore::~CCountingSemaphore() noexcept
+CWaitWordSemaphore::~CWaitWordSemaphore() noexcept
 {
     signal_shutdown();
 }
@@ -41,14 +41,14 @@ CCountingSemaphore::~CCountingSemaphore() noexcept
 //  State queries
 //==============================================================================
 
-std::uint32_t CCountingSemaphore::query_count() const noexcept
+std::uint32_t CWaitWordSemaphore::query_count() const noexcept
 {
     const std::uint32_t count = m_count.load(std::memory_order_relaxed);
 
     return (count == k_shutdown_signalled_count) ? 0u : count;
 }
 
-bool CCountingSemaphore::is_shutdown_signalled() const noexcept
+bool CWaitWordSemaphore::is_shutdown_signalled() const noexcept
 {
     return m_count.load(std::memory_order_acquire) == k_shutdown_signalled_count;
 }
@@ -57,7 +57,7 @@ bool CCountingSemaphore::is_shutdown_signalled() const noexcept
 //  Consumer operations
 //==============================================================================
 
-bool CCountingSemaphore::acquire() noexcept
+bool CWaitWordSemaphore::acquire() noexcept
 {
     std::uint32_t seen = m_count.load(std::memory_order_acquire);
 
@@ -87,7 +87,7 @@ bool CCountingSemaphore::acquire() noexcept
     }
 }
 
-bool CCountingSemaphore::try_acquire() noexcept
+bool CWaitWordSemaphore::try_acquire() noexcept
 {
     std::uint32_t seen = m_count.load(std::memory_order_acquire);
 
@@ -111,7 +111,7 @@ bool CCountingSemaphore::try_acquire() noexcept
 //  Producer operations
 //==============================================================================
 
-bool CCountingSemaphore::release(const std::uint32_t release_count) noexcept
+bool CWaitWordSemaphore::release(const std::uint32_t release_count) noexcept
 {
     if (release_count == 0u)
     {
@@ -157,7 +157,7 @@ bool CCountingSemaphore::release(const std::uint32_t release_count) noexcept
 //  Producer state management
 //==============================================================================
 
-void CCountingSemaphore::signal_shutdown() noexcept
+void CWaitWordSemaphore::signal_shutdown() noexcept
 {
     const std::uint32_t previous = m_count.exchange(k_shutdown_signalled_count, std::memory_order_acq_rel);
 
@@ -167,7 +167,7 @@ void CCountingSemaphore::signal_shutdown() noexcept
     }
 }
 
-void CCountingSemaphore::restart() noexcept
+void CWaitWordSemaphore::restart() noexcept
 {
     m_count.store(0u, std::memory_order_relaxed);
 }

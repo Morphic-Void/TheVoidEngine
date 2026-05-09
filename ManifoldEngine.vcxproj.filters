@@ -315,7 +315,7 @@
     <ClInclude Include="include\platform\threading\platform_threading.hpp">
       <Filter>include\platform\threading</Filter>
     </ClInclude>
-    <ClInclude Include="include\platform\threading\counting_semaphore.hpp">
+    <ClInclude Include="include\platform\threading\wait_word_semaphore.hpp">
       <Filter>include\platform\threading</Filter>
     </ClInclude>
     <ClInclude Include="include\platform\threading\thread_lifetime.hpp">
@@ -401,7 +401,7 @@
     <ClCompile Include="src\platform\threading\wait_word.cpp">
       <Filter>src\platform\threading</Filter>
     </ClCompile>
-    <ClCompile Include="src\platform\threading\counting_semaphore.cpp">
+    <ClCompile Include="src\platform\threading\wait_word_semaphore.cpp">
       <Filter>src\platform\threading</Filter>
     </ClCompile>
     <ClCompile Include="src\platform\threading\thread_lifetime.cpp">
