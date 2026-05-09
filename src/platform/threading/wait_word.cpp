@@ -33,6 +33,14 @@
 #include <os/os_sync_wait_on_address.h>
 #endif
 
+#if MV_PLATFORM_NATIVE_WAIT_WORD_EXPERIMENTAL
+#if defined(_MSC_VER)
+#pragma message("warning: native wait-word support is experimental on this platform.")
+#else
+#warning "native wait-word support is experimental on this platform."
+#endif
+#endif
+
 namespace platform::threading
 {
 
@@ -140,14 +148,6 @@ void wake_all_waiters(const std::atomic<std::uint32_t>& word) noexcept
 
     (void)internal::futex_wake_private(address, INT_MAX);
 }
-
-#if MV_PLATFORM_ANDROID
-#if defined(_MSC_VER)
-#pragma message("warning: Android wait-word support is experimental and currently uses the Linux futex implementation path.")
-#else
-#warning "Android wait-word support is experimental and currently uses the Linux futex implementation path."
-#endif
-#endif
 
 #elif MV_PLATFORM_MAC_OS
 
