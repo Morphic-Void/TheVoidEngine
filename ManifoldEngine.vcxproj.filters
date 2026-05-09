@@ -333,6 +333,9 @@
     <ClInclude Include="include\platform\threading\thread_priority.hpp">
       <Filter>include\platform\threading</Filter>
     </ClInclude>
+    <ClInclude Include="include\threading\alternating_parking_gate.hpp">
+      <Filter>include\threading</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main\ManifoldEngine.cpp">
@@ -412,6 +415,9 @@
     </ClCompile>
     <ClCompile Include="src\platform\threading\thread_priority.cpp">
       <Filter>src\platform\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="src\threading\alternating_parking_gate.cpp">
+      <Filter>src\threading</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
