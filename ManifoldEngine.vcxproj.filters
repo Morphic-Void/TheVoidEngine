@@ -327,6 +327,12 @@
     <ClInclude Include="include\system\TStaticLookup.hpp">
       <Filter>include\system</Filter>
     </ClInclude>
+    <ClInclude Include="include\platform\threading\process_priority.hpp">
+      <Filter>include\platform\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="include\platform\threading\thread_priority.hpp">
+      <Filter>include\platform\threading</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main\ManifoldEngine.cpp">
@@ -400,6 +406,12 @@
     </ClCompile>
     <ClCompile Include="src\memory\host_allocator.cpp">
       <Filter>src\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\threading\process_priority.cpp">
+      <Filter>src\platform\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\threading\thread_priority.cpp">
+      <Filter>src\platform\threading</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
