@@ -157,11 +157,6 @@ bool CCountingSemaphore::release(const std::uint32_t release_count) noexcept
 //  Producer state management
 //==============================================================================
 
-void CCountingSemaphore::restart() noexcept
-{
-    m_count.store(0u, std::memory_order_relaxed);
-}
-
 void CCountingSemaphore::signal_shutdown() noexcept
 {
     const std::uint32_t previous = m_count.exchange(k_shutdown_signalled_count, std::memory_order_acq_rel);
@@ -170,6 +165,11 @@ void CCountingSemaphore::signal_shutdown() noexcept
     {
         platform::threading::wake_all_waiters(m_count);
     }
+}
+
+void CCountingSemaphore::restart() noexcept
+{
+    m_count.store(0u, std::memory_order_relaxed);
 }
 
 }   //  namespace threading

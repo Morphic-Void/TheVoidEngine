@@ -72,8 +72,8 @@ public:
     bool release(std::uint32_t release_count = 1u) noexcept;
 
     //  Producer state management
-    void restart() noexcept;
     void signal_shutdown() noexcept;
+    void restart() noexcept;
 
 private:
 
