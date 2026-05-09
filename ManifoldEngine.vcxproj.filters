@@ -324,6 +324,9 @@
     <ClInclude Include="include\memory\host_allocator.hpp">
       <Filter>include\memory</Filter>
     </ClInclude>
+    <ClInclude Include="include\system\TStaticLookup.hpp">
+      <Filter>include\system</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main\ManifoldEngine.cpp">

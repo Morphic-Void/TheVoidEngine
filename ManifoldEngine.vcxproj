@@ -218,6 +218,7 @@
     <ClInclude Include="include\platform\threading\wait_word.hpp" />
     <ClInclude Include="include\platform\windows_include.hpp" />
     <ClInclude Include="include\system\system_ids.hpp" />
+    <ClInclude Include="include\system\TStaticLookup.hpp" />
     <ClInclude Include="include\tests\run_tests.hpp" />
     <ClInclude Include="include\tests\TOrderedSlots_test_harness.hpp" />
     <ClInclude Include="include\tests\TOwningTransport_test_suite.hpp" />
