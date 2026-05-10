@@ -115,6 +115,46 @@ constexpr std::size_t decode_id(const std::size_t id) noexcept { return field::d
 }   //  namespace thread_ids
 
 //==============================================================================
+//  Combined system ids (module + thread) helpers
+//==============================================================================
+
+namespace system_ids
+{
+
+constexpr std::size_t k_module_id_mask = module_ids::field::k_id_field_mask;
+constexpr std::size_t k_thread_id_mask = thread_ids::field::k_id_field_mask;
+constexpr std::size_t k_invalid_id_mask = ~(k_module_id_mask | k_thread_id_mask);
+
+constexpr bool is_valid_id(const std::size_t system_id) noexcept
+{
+    return
+        ((system_id & k_invalid_id_mask) == 0u) &&
+        ((system_id & k_module_id_mask) != 0u) &&
+        ((system_id & k_thread_id_mask) != 0u);
+}
+
+constexpr std::size_t make_system_id(const std::size_t module_id, const std::size_t thread_id) noexcept
+{
+    if (module_ids::is_valid_id(module_id) && thread_ids::is_valid_id(thread_id))
+    {
+        return module_id | thread_id;
+    }
+    return 0u;
+}
+
+constexpr std::size_t get_module_id(const std::size_t system_id) noexcept
+{
+    return is_valid_id(system_id) ? (system_id & k_module_id_mask) : std::size_t{ 0u };
+}
+
+constexpr std::size_t get_thread_id(const std::size_t system_id) noexcept
+{
+    return is_valid_id(system_id) ? (system_id & k_thread_id_mask) : std::size_t{ 0u };
+}
+
+}   //  namespace system_ids
+
+//==============================================================================
 //  Type ids
 //==============================================================================
 
@@ -136,23 +176,41 @@ constexpr std::size_t stable_strings = encode_id(5u);
 namespace module_ids
 {
 
+//  the host executable
 constexpr std::size_t executable = encode_id(1u);
+
+//  the application
 constexpr std::size_t application = encode_id(2u);
 
+// the platform
 constexpr std::size_t platform_windows = encode_id(4u);
 constexpr std::size_t platform_linux = encode_id(5u);
-constexpr std::size_t platform_osx = encode_id(6u);
+constexpr std::size_t platform_android = encode_id(6u);
+constexpr std::size_t platform_mac_os = encode_id(7u);
 
-constexpr std::size_t conditioning_general = encode_id(8u);
-constexpr std::size_t conditioning_directx_windows = encode_id(9u);
-constexpr std::size_t conditioning_vulkan_windows = encode_id(10u);
-constexpr std::size_t conditioning_vulkan_linux = encode_id(11u);
-constexpr std::size_t conditioning_vulkan_osx = encode_id(12u);
+//  platform agnostic asset conditioning
+constexpr std::size_t conditioning_general = encode_id(16u);
 
-constexpr std::size_t rendering_directx_windows = encode_id(16u);
-constexpr std::size_t rendering_vulkan_windows = encode_id(17u);
-constexpr std::size_t rendering_vulkan_linux = encode_id(18u);
-constexpr std::size_t rendering_vulkan_osx = encode_id(19u);
+//  per-api asset conditioning (textures etc)
+constexpr std::size_t asset_directx_windows = encode_id(32u);
+constexpr std::size_t asset_vulkan_windows = encode_id(33u);
+constexpr std::size_t asset_vulkan_linux = encode_id(34u);
+constexpr std::size_t asset_vulkan_android = encode_id(35u);
+constexpr std::size_t asset_vulkan_osx = encode_id(36u);
+
+//  per-api pipeline state object conditioning/validation
+constexpr std::size_t pso_directx_windows = encode_id(48u);
+constexpr std::size_t pso_vulkan_windows = encode_id(49u);
+constexpr std::size_t pso_vulkan_linux = encode_id(50u);
+constexpr std::size_t pso_vulkan_android = encode_id(51u);
+constexpr std::size_t pso_vulkan_osx = encode_id(52u);
+
+//  back-end rendering api
+constexpr std::size_t render_directx_windows = encode_id(64u);
+constexpr std::size_t render_vulkan_windows = encode_id(65u);
+constexpr std::size_t render_vulkan_linux = encode_id(66u);
+constexpr std::size_t render_vulkan_android = encode_id(67u);
+constexpr std::size_t render_vulkan_osx = encode_id(68u);
 
 }   //  namespace module_ids
 
@@ -163,17 +221,24 @@ constexpr std::size_t rendering_vulkan_osx = encode_id(19u);
 namespace thread_ids
 {
 
+//  the host executable
 constexpr std::size_t host = encode_id(1u);
+
+//  the application
 constexpr std::size_t application = encode_id(2u);
 
+//  rendering
 constexpr std::size_t rendering = encode_id(4u);
 constexpr std::size_t rhi = encode_id(5u);
 
-constexpr std::size_t physics = encode_id(8u);
+//  simulation
+constexpr std::size_t simulation = encode_id(8u);
 
+//  background tasks
 constexpr std::size_t background_file_io = encode_id(16u);
 constexpr std::size_t background_conditioning = encode_id(17u);
 
+//  generic workers
 constexpr std::size_t jobs_worker_00 = encode_id(32u);
 constexpr std::size_t jobs_worker_01 = encode_id(33u);
 constexpr std::size_t jobs_worker_02 = encode_id(34u);
@@ -210,42 +275,14 @@ constexpr std::size_t jobs_worker_31 = encode_id(63u);
 }   //  namespace thread_ids
 
 //==============================================================================
-//  Combined system ids (module + thread)
+//  System ids
 //==============================================================================
 
 namespace system_ids
 {
 
-constexpr std::size_t k_module_id_mask = module_ids::field::k_id_field_mask;
-constexpr std::size_t k_thread_id_mask = thread_ids::field::k_id_field_mask;
-constexpr std::size_t k_invalid_id_mask = ~(k_module_id_mask | k_thread_id_mask);
-
-constexpr bool is_valid_id(const std::size_t system_id) noexcept
-{
-    return
-        ((system_id & k_invalid_id_mask) == 0u) &&
-        ((system_id & k_module_id_mask) != 0u) &&
-        ((system_id & k_thread_id_mask) != 0u);
-}
-
-constexpr std::size_t make_system_id(const std::size_t module_id, const std::size_t thread_id) noexcept
-{
-    if (module_ids::is_valid_id(module_id) && thread_ids::is_valid_id(thread_id))
-    {
-        return module_id | thread_id;
-    }
-    return 0u;
-}
-
-constexpr std::size_t get_module_id(const std::size_t system_id) noexcept
-{
-    return is_valid_id(system_id) ? (system_id & k_module_id_mask) : std::size_t{ 0u };
-}
-
-constexpr std::size_t get_thread_id(const std::size_t system_id) noexcept
-{
-    return is_valid_id(system_id) ? (system_id & k_thread_id_mask) : std::size_t{ 0u };
-}
+constexpr std::size_t host = make_system_id(module_ids::executable, thread_ids::host);
+constexpr std::size_t application = make_system_id(module_ids::application, thread_ids::application);
 
 }   //  namespace system_ids
 
