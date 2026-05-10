@@ -32,9 +32,15 @@ Add the tga testing
 
 IN PROGRESS: Wrapped phase gate (done), wait predicates and counter semaphore
 
+Native thread naming
+
 Thread provisioning and other data access structures
 
 TLS definition
+
+Module, thread and system names (ID registry)
+Text ingester
+Setup project to build on Linux
 
 11. DEFERRED UNTIL PROJECT TESTABLE ON ALL SUPPORTED PLATFORMS: Add smoke/stress tests around each layer
 
