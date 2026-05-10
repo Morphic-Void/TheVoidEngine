@@ -21,26 +21,40 @@ DONE: use Linux path for Android wait word but add additional defines and warnin
 
 DONE: CStaticLookup for provisioning and other data uintptr_t based
 
+DONE: Wrapped phase gate (parking), wait predicates and counter semaphore
+
+DONE: Native thread naming
+
 DONE - DECIDED TO IGNORE EVERYTHING BUT PRIORITY AT THIS STAGE: add affinity, priority and numa identity
 
 4. IN PROGRESS - (CONSIDERING ANDROID OPTIONS): Implement wait/wake wrapper or fallback-compatible wait primitive
 6. IN PROGRESS - (IT IS NEEDED AS FALLBACK): Implement semaphore wrapper if needed
 
-Random tasks:
 
-Add the tga testing
+Remaining short term tasks:
 
-IN PROGRESS: Wrapped phase gate (done), wait predicates and counter semaphore
+Add the high performance counter
 
-Native thread naming
+Add tga testing or perform some manual testing (leaning toward the latter)
 
-Thread provisioning and other data access structures
+Add the low level text ingester (using SuiteUTF)
 
-TLS definition
+Threading related, grouped here in order:
+    1. Refactor the module and thread ids to separate role and sub-role/sub-identity
+    2. Module, thread and system names (ID registry)
+    3. Thread provisioning and other data access structures
+    4. TLS definition (will depend on what the provisioning ends up looking like)
 
-Module, thread and system names (ID registry)
-Text ingester
+Build out the debug system (depends on completion of the threading related tasks)
+
 Setup project to build on Linux
 
-11. DEFERRED UNTIL PROJECT TESTABLE ON ALL SUPPORTED PLATFORMS: Add smoke/stress tests around each layer
+Create the Windows platform module
+
+Create the Linux platform module
+
+Longer term tasks:
+
+Add smoke/stress tests around each layer of the threading (may become a redundant task if everything ends up being tested through actual use)
+
 
