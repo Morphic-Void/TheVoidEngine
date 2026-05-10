@@ -342,6 +342,12 @@
     <ClInclude Include="include\platform\system\process_priority.hpp">
       <Filter>include\platform\system</Filter>
     </ClInclude>
+    <ClInclude Include="include\threading\CCountingSemaphore.hpp">
+      <Filter>include\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\CWaitPredicate.hpp">
+      <Filter>include\threading</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main\ManifoldEngine.cpp">
@@ -424,6 +430,12 @@
     </ClCompile>
     <ClCompile Include="src\platform\system\process_priority.cpp">
       <Filter>src\platform\system</Filter>
+    </ClCompile>
+    <ClCompile Include="src\threading\CCountingSemaphore.cpp">
+      <Filter>src\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="src\threading\CWaitPredicate.cpp">
+      <Filter>src\threading</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
