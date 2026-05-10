@@ -348,6 +348,9 @@
     <ClInclude Include="include\threading\CWaitPredicate.hpp">
       <Filter>include\threading</Filter>
     </ClInclude>
+    <ClInclude Include="include\platform\threading\thread_naming.hpp">
+      <Filter>include\platform\threading</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main\ManifoldEngine.cpp">
@@ -436,6 +439,9 @@
     </ClCompile>
     <ClCompile Include="src\threading\CWaitPredicate.cpp">
       <Filter>src\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="src\platform\threading\thread_naming.cpp">
+      <Filter>src\platform\threading</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

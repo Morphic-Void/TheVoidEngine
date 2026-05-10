@@ -166,6 +166,7 @@
     <ClCompile Include="src\platform\module\binding.cpp" />
     <ClCompile Include="src\platform\path\native_path.cpp" />
     <ClCompile Include="src\platform\system\process_priority.cpp" />
+    <ClCompile Include="src\platform\threading\thread_naming.cpp" />
     <ClCompile Include="src\platform\threading\wait_word_semaphore.cpp" />
     <ClCompile Include="src\platform\threading\exclusive_lock.cpp" />
     <ClCompile Include="src\platform\threading\hw_thread_count.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="include\platform\path\native_path.hpp" />
     <ClInclude Include="include\platform\platform_defines.hpp" />
     <ClInclude Include="include\platform\system\process_priority.hpp" />
+    <ClInclude Include="include\platform\threading\thread_naming.hpp" />
     <ClInclude Include="include\platform\threading\wait_word_semaphore.hpp" />
     <ClInclude Include="include\platform\threading\exclusive_lock.hpp" />
     <ClInclude Include="include\platform\threading\hw_thread_count.hpp" />

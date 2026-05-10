@@ -25,6 +25,7 @@
 #include "platform/threading/native_thread_id.hpp"
 #include "platform/threading/processor_relax.hpp"
 #include "platform/threading/thread_lifetime.hpp"
+#include "platform/threading/thread_naming.hpp"
 #include "platform/threading/thread_priority.hpp"
 #include "platform/threading/wait_word.hpp"
 #include "platform/threading/wait_word_semaphore.hpp"
