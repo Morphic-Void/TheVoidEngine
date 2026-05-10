@@ -2,11 +2,11 @@
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
 //
-//  File:   alternating_parking_gate.cpp
+//  File:   CParkingGate.cpp
 //  Author: Ritchie Brannan
 //  Date:   9 May 26
 
-#include "threading/alternating_parking_gate.hpp"
+#include "threading/CParkingGate.hpp"
 #include "platform/threading/processor_relax.hpp"
 #include "debug/debug.hpp"
 
@@ -17,14 +17,14 @@ namespace threading
 //  Constructor and destructor
 //==============================================================================
 
-CAlternatingParkingGate::CAlternatingParkingGate() noexcept
+CParkingGate::CParkingGate() noexcept
 {
     m_valid = m_gates[0].is_valid() && m_gates[1].is_valid();
     m_closed_phase = 0u;
     m_has_control = false;
 }
 
-CAlternatingParkingGate::~CAlternatingParkingGate() noexcept
+CParkingGate::~CParkingGate() noexcept
 {
     MV_HARD_ASSERT(!m_has_control);
 }
@@ -33,12 +33,12 @@ CAlternatingParkingGate::~CAlternatingParkingGate() noexcept
 //  Status
 //==============================================================================
 
-bool CAlternatingParkingGate::is_valid() const noexcept
+bool CParkingGate::is_valid() const noexcept
 {
     return m_valid;
 }
 
-bool CAlternatingParkingGate::has_control() const noexcept
+bool CParkingGate::has_control() const noexcept
 {
     return m_has_control;
 }
@@ -47,7 +47,7 @@ bool CAlternatingParkingGate::has_control() const noexcept
 //  Control
 //==============================================================================
 
-bool CAlternatingParkingGate::acquire_control() noexcept
+bool CParkingGate::acquire_control() noexcept
 {
     if (MV_FAIL_SAFE_ASSERT(m_valid && !m_has_control))
     {
@@ -59,7 +59,7 @@ bool CAlternatingParkingGate::acquire_control() noexcept
     return false;
 }
 
-void CAlternatingParkingGate::release_control() noexcept
+void CParkingGate::release_control() noexcept
 {
     if (MV_FAIL_SAFE_ASSERT(m_valid && m_has_control))
     {
@@ -73,7 +73,7 @@ void CAlternatingParkingGate::release_control() noexcept
 //  Parking
 //==============================================================================
 
-void CAlternatingParkingGate::park(CParkingTicket& ticket) noexcept
+void CParkingGate::park(CParkingTicket& ticket) noexcept
 {
     if (MV_FAIL_SAFE_ASSERT(m_valid))
     {
@@ -89,7 +89,7 @@ void CAlternatingParkingGate::park(CParkingTicket& ticket) noexcept
 //  Phase control
 //==============================================================================
 
-void CAlternatingParkingGate::cycle_phase() noexcept
+void CParkingGate::cycle_phase() noexcept
 {
     if (MV_FAIL_SAFE_ASSERT(m_valid && m_has_control))
     {   //  Close the open phase before opening the closed phase.

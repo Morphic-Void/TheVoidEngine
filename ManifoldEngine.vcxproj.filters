@@ -336,7 +336,7 @@
     <ClInclude Include="include\platform\threading\thread_priority.hpp">
       <Filter>include\platform\threading</Filter>
     </ClInclude>
-    <ClInclude Include="include\threading\alternating_parking_gate.hpp">
+    <ClInclude Include="include\threading\CParkingGate.hpp">
       <Filter>include\threading</Filter>
     </ClInclude>
     <ClInclude Include="include\platform\system\process_priority.hpp">
@@ -419,7 +419,7 @@
     <ClCompile Include="src\platform\threading\thread_priority.cpp">
       <Filter>src\platform\threading</Filter>
     </ClCompile>
-    <ClCompile Include="src\threading\alternating_parking_gate.cpp">
+    <ClCompile Include="src\threading\CParkingGate.cpp">
       <Filter>src\threading</Filter>
     </ClCompile>
     <ClCompile Include="src\platform\system\process_priority.cpp">

@@ -2,7 +2,7 @@
 //  Copyright (c) 2026 Ritchie Brannan / Morphic Void Limited
 //  License: MIT (see LICENSE file in repository root)
 //
-//  File:   alternating_parking_gate.hpp
+//  File:   CParkingGate.hpp
 //  Author: Ritchie Brannan
 //  Date:   9 May 26
 //
@@ -12,11 +12,11 @@
 //
 //  Alternating parking gate built from two exclusive locks.
 //
-//  CAlternatingParkingGate provides a small fallback parking primitive for
-//  higher-level threading objects that need an owned place to block waiters.
-//  The controller closes one phase while the other remains open. Parkers pass
-//  through the phase recorded in their caller-owned CParkingTicket, then flip
-//  the ticket for the next park.
+//  CParkingGate provides a small fallback parking primitive for higher-level
+//  threading objects that need an owned place to block waiters. The controller
+//  closes one phase while the other remains open. Parkers pass through the
+//  phase recorded in their caller-owned CParkingTicket, then flip the ticket
+//  for the next park.
 //
 //  Construction leaves both gates open. acquire_control() must be called by
 //  the controller thread before controlled use. release_control() opens the
@@ -28,8 +28,8 @@
 
 #pragma once
 
-#ifndef ALTERNATING_PARKING_GATE_HPP_INCLUDED
-#define ALTERNATING_PARKING_GATE_HPP_INCLUDED
+#ifndef CPARKING_GATE_HPP_INCLUDED
+#define CPARKING_GATE_HPP_INCLUDED
 
 #include <cstdint>  //  std::uint32_t
 
@@ -56,28 +56,28 @@ public:
 
 private:
 
-    friend class CAlternatingParkingGate;
+    friend class CParkingGate;
 
     std::uint32_t m_phase = 0u;
 };
 
 //==============================================================================
-//  CAlternatingParkingGate
+//  CParkingGate
 //==============================================================================
 
-class CAlternatingParkingGate
+class CParkingGate
 {
 public:
 
     //  Constructor and destructor
-    CAlternatingParkingGate() noexcept;
-    ~CAlternatingParkingGate() noexcept;
+    CParkingGate() noexcept;
+    ~CParkingGate() noexcept;
 
     //  Deleted lifetime
-    CAlternatingParkingGate(const CAlternatingParkingGate&) = delete;
-    CAlternatingParkingGate& operator=(const CAlternatingParkingGate&) = delete;
-    CAlternatingParkingGate(CAlternatingParkingGate&&) = delete;
-    CAlternatingParkingGate& operator=(CAlternatingParkingGate&&) = delete;
+    CParkingGate(const CParkingGate&) = delete;
+    CParkingGate& operator=(const CParkingGate&) = delete;
+    CParkingGate(CParkingGate&&) = delete;
+    CParkingGate& operator=(CParkingGate&&) = delete;
 
     //  Status
     bool is_valid() const noexcept;
@@ -105,4 +105,4 @@ private:
 
 }   //  namespace threading
 
-#endif // ALTERNATING_PARKING_GATE_HPP_INCLUDED
+#endif  //  CPARKING_GATE_HPP_INCLUDED

@@ -45,7 +45,7 @@
 #include "threading/transports/bundles/TRingBundle.hpp"
 #include "threading/transports/bundles/TQueueBundle.hpp"
 #include "threading/transports/bundles/TOwningBundle.hpp"
-#include "threading/alternating_parking_gate.hpp"
+#include "threading/CParkingGate.hpp"
 #include "types/fp16data_t.hpp"
 
 #include "tests/run_tests.hpp"

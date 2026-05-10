@@ -180,7 +180,7 @@
     <ClCompile Include="src\tests\TQueueTransport_test_suite.cpp" />
     <ClCompile Include="src\tests\TRingTransport_test_suite.cpp" />
     <ClCompile Include="src\tests\TUnorderedSlots_test_harness.cpp" />
-    <ClCompile Include="src\threading\alternating_parking_gate.cpp" />
+    <ClCompile Include="src\threading\CParkingGate.cpp" />
     <ClCompile Include="src\types\fp16data_t.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -230,7 +230,7 @@
     <ClInclude Include="include\tests\TQueueTransport_test_suite.hpp" />
     <ClInclude Include="include\tests\TRingTransport_test_suite.hpp" />
     <ClInclude Include="include\tests\TUnorderedSlots_test_harness.hpp" />
-    <ClInclude Include="include\threading\alternating_parking_gate.hpp" />
+    <ClInclude Include="include\threading\CParkingGate.hpp" />
     <ClInclude Include="include\threading\transports\bundles\TBulkBundle.hpp" />
     <ClInclude Include="include\threading\transports\bundles\TOwningBundle.hpp" />
     <ClInclude Include="include\threading\transports\bundles\TQueueBundle.hpp" />
