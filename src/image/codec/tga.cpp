@@ -695,6 +695,8 @@ CByteBuffer encode(const CByteRectConstView& view, const EncodeOptions& options)
     //  construct the tga file memory image
     if (MV_FAIL_SAFE_ASSERT((tga_file_bytes <= memory::k_max_elements) && buffer.allocate(static_cast<std::size_t>(tga_file_bytes))))
     {
+        (void)buffer.set_size(static_cast<std::size_t>(tga_file_bytes));
+
         TGAHeader* header = reinterpret_cast<TGAHeader*>(buffer.data());
         std::uint8_t* body = reinterpret_cast<std::uint8_t*>(header + 1u);
 
