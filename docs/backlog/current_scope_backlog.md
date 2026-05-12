@@ -22,8 +22,9 @@ DONE: use Linux path for Android wait word but add additional defines and warnin
 DONE: CStaticLookup for provisioning and other data uintptr_t based
 
 DONE: Wrapped phase gate (parking), wait predicates and counter semaphore
-
 DONE: Native thread naming
+CONE: Add the high performance counter
+DONE: Add tga testing or perform some manual testing (leaning toward the latter)
 
 DONE - DECIDED TO IGNORE EVERYTHING BUT PRIORITY AT THIS STAGE: add affinity, priority and numa identity
 
@@ -32,10 +33,6 @@ DONE - DECIDED TO IGNORE EVERYTHING BUT PRIORITY AT THIS STAGE: add affinity, pr
 
 
 Remaining short term tasks:
-
-Add the high performance counter
-
-Add tga testing or perform some manual testing (leaning toward the latter)
 
 Add the low level text ingester (using SuiteUTF)
 
