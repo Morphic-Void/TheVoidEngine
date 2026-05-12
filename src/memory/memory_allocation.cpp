@@ -137,6 +137,11 @@ bool set_allocator(IAllocator* allocator) noexcept
     return success;
 }
 
+IAllocator* get_allocator() noexcept
+{
+    return s_allocator.load(std::memory_order_acquire);
+}
+
 bool enable_allocation(const bool enable) noexcept
 {
     return s_allocation_is_enabled.exchange(enable, std::memory_order_relaxed);

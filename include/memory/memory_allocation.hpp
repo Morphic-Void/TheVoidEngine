@@ -198,6 +198,9 @@ public:
 //  Returns false if allocator replacement is currently disallowed.
 bool set_allocator(IAllocator* allocator) noexcept;
 
+//  Fetch the currently installed allocator.
+IAllocator* get_allocator() noexcept;
+
 //  Sets allocation enable state and returns the previous state.
 bool enable_allocation(const bool enable = true) noexcept;
 
