@@ -64,7 +64,7 @@ CByteBuffer loadFile(const char* const utf8_path, const std::size_t pad) noexcep
     return buffer;
 }
 
-bool saveFile(const char* const utf8_path, const CByteView& view) noexcept
+bool saveFile(const char* const utf8_path, const CByteConstView& view) noexcept
 {
     bool success = false;
     if (!view.is_empty())

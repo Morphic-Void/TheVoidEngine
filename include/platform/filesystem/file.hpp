@@ -32,7 +32,7 @@ CByteBuffer loadFile(const char* const utf8_path, const size_t pad = 0) noexcept
 //  Will not write empty files.
 //  Semi-atomic file writing.
 //  On failure, best effort is made clean up partial writes.
-bool saveFile(const char* const utf8_path, const CByteView& view) noexcept;
+bool saveFile(const char* const utf8_path, const CByteConstView& view) noexcept;
 
 }   //  namespace platform::filesystem
 
