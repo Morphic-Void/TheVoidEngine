@@ -120,6 +120,7 @@ private:
 
     TPodVector<T> m_slots;
     TPodVector<TKey> m_keys;
+
     T m_swap_slot;
     TKey m_swap_key;
 

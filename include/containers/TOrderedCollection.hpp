@@ -141,6 +141,7 @@ private:
     TStableStorage<T> m_storage;
     TPodVector<SlotData> m_slots;
     TPodVector<TKey> m_keys;
+
     SlotData m_swap_slot;
     TKey m_swap_key;
 
