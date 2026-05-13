@@ -177,6 +177,7 @@
     <ClCompile Include="src\platform\threading\thread_priority.cpp" />
     <ClCompile Include="src\platform\threading\wait_word.cpp" />
     <ClCompile Include="src\tests\run_tests.cpp" />
+    <ClCompile Include="src\tests\threading_test.cpp" />
     <ClCompile Include="src\tests\TOrderedSlots_test_harness.cpp" />
     <ClCompile Include="src\tests\TOwningTransport_test_suite.cpp" />
     <ClCompile Include="src\tests\TQueueTransport_test_suite.cpp" />
@@ -200,6 +201,8 @@
     <ClInclude Include="include\containers\TInstance.hpp" />
     <ClInclude Include="include\containers\TOrderedCollection.hpp" />
     <ClInclude Include="include\containers\TPodFifo.hpp" />
+    <ClInclude Include="include\containers\TPodOrderedSlots.hpp" />
+    <ClInclude Include="include\containers\TPodUnorderedSlots.hpp" />
     <ClInclude Include="include\containers\TPodVector.hpp" />
     <ClInclude Include="include\containers\TStableStorage.hpp" />
     <ClInclude Include="include\containers\TUnorderedCollection.hpp" />
@@ -231,6 +234,7 @@
     <ClInclude Include="include\system\system_ids.hpp" />
     <ClInclude Include="include\system\TStaticLookup.hpp" />
     <ClInclude Include="include\tests\run_tests.hpp" />
+    <ClInclude Include="include\tests\threading_test.hpp" />
     <ClInclude Include="include\tests\TOrderedSlots_test_harness.hpp" />
     <ClInclude Include="include\tests\TOwningTransport_test_suite.hpp" />
     <ClInclude Include="include\tests\TQueueTransport_test_suite.hpp" />
@@ -238,6 +242,7 @@
     <ClInclude Include="include\tests\TUnorderedSlots_test_harness.hpp" />
     <ClInclude Include="include\threading\CCountingSemaphore.hpp" />
     <ClInclude Include="include\threading\CParkingGate.hpp" />
+    <ClInclude Include="include\threading\CThreadControlState.hpp" />
     <ClInclude Include="include\threading\CWaitPredicate.hpp" />
     <ClInclude Include="include\threading\transports\bundles\TBulkBundle.hpp" />
     <ClInclude Include="include\threading\transports\bundles\TOwningBundle.hpp" />

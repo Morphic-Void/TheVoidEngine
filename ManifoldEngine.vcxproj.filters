@@ -354,6 +354,18 @@
     <ClInclude Include="include\platform\system\performance_counter.hpp">
       <Filter>include\platform\system</Filter>
     </ClInclude>
+    <ClInclude Include="include\tests\threading_test.hpp">
+      <Filter>include\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\CThreadControlState.hpp">
+      <Filter>include\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="include\containers\TPodOrderedSlots.hpp">
+      <Filter>include\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\containers\TPodUnorderedSlots.hpp">
+      <Filter>include\containers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main\ManifoldEngine.cpp">
@@ -448,6 +460,9 @@
     </ClCompile>
     <ClCompile Include="src\platform\system\performance_counter.cpp">
       <Filter>src\platform\system</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests\threading_test.cpp">
+      <Filter>src\tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
