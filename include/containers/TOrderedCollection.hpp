@@ -59,6 +59,7 @@ class TOrderedCollection : public slots::COrderedSlots_int32
 {
 private:
     using base_class = slots::COrderedSlots_int32;
+
     static_assert(!std::is_const_v<T>, "TOrderedCollection<T, TKey> requires non-const T.");
     static_assert(!std::is_const_v<TKey>, "TOrderedCollection<T, TKey> requires non-const TKey.");
     static_assert(std::is_nothrow_destructible_v<T>, "TOrderedCollection<T, TKey> requires T to be nothrow destructible.");
@@ -404,7 +405,6 @@ inline bool TOrderedCollection<T, TKey>::check_integrity() const noexcept
     {   //  no need to catch the error here as the base class will have already caught it
         return false;
     }
-
 
     //  metadata coherence check
     const std::size_t element_count = m_slots.size();

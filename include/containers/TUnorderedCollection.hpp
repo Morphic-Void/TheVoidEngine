@@ -57,6 +57,7 @@ class TUnorderedCollection : public slots::CUnorderedSlots_int32
 {
 private:
     using base_class = slots::CUnorderedSlots_int32;
+
     static_assert(!std::is_const_v<T>, "TUnorderedCollection<T> requires non-const T.");
     static_assert(std::is_nothrow_destructible_v<T>, "TUnorderedCollection<T> requires T to be nothrow destructible.");
 
