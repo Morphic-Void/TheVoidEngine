@@ -71,9 +71,9 @@ struct TField
 //  ID field definitions
 //==============================================================================
 
-namespace type_ids   { using field = system_id_util::TField<0x55555555u>; }
-namespace module_ids { using field = system_id_util::TField<0xAAA00000u>; }
-namespace thread_ids { using field = system_id_util::TField<0x000AAAAAu>; }
+namespace type_ids   { using field = system_id_util::TField<0x55555555u>; /* 16-bits */ }
+namespace module_ids { using field = system_id_util::TField<0xAAA00000u>; /*  6-bits */ }
+namespace thread_ids { using field = system_id_util::TField<0x000AAAAAu>; /* 10-bits */ }
 
 //==============================================================================
 //  Type id helpers
