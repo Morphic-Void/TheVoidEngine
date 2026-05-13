@@ -32,7 +32,7 @@
 #include <algorithm>    //  std::max
 #include <cstddef>      //  std::size_t
 #include <cstdint>      //  std::int32_t, std::uint32_t
-#include <type_traits>  //  std::is_const_v, std::is_trivially_copyable_v
+#include <type_traits>  //  std::is_const_v, std::is_copy_assignable_v, std::is_trivially_copyable_v
 
 #include "memory/memory_allocation.hpp"
 #include "slots/TUnorderedSlots.hpp"
@@ -53,6 +53,7 @@ private:
     using base_class = slots::CUnorderedSlots_int32;
 
     static_assert(!std::is_const_v<T>, "TPodUnorderedSlots<T> requires non-const T.");
+    static_assert(std::is_copy_assignable_v<T>, "TPodUnorderedSlots<T> requires copy-assignable T.");
     static_assert(std::is_trivially_copyable_v<T>, "TPodUnorderedSlots<T> requires trivially copyable T.");
 
 public:

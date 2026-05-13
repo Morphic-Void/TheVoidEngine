@@ -32,7 +32,7 @@
 #include <algorithm>    //  std::max
 #include <cstddef>      //  std::size_t
 #include <cstdint>      //  std::int32_t, std::uint32_t
-#include <type_traits>  //  std::is_const_v, std::is_trivially_copyable_v
+#include <type_traits>  //  std::is_const_v, std::is_copy_assignable_v, std::is_trivially_copyable_v
 
 #include "memory/memory_allocation.hpp"
 #include "slots/TOrderedSlots.hpp"
@@ -54,6 +54,8 @@ private:
 
     static_assert(!std::is_const_v<T>, "TPodOrderedSlots<T, TKey> requires non-const T.");
     static_assert(!std::is_const_v<TKey>, "TPodOrderedSlots<T, TKey> requires non-const TKey.");
+    static_assert(std::is_copy_assignable_v<T>, "TPodOrderedSlots<T, TKey> requires copy-assignable T.");
+    static_assert(std::is_copy_assignable_v<TKey>, "TPodOrderedSlots<T, TKey> requires copy-assignable TKey.");
     static_assert(std::is_trivially_copyable_v<T>, "TPodOrderedSlots<T, TKey> requires trivially copyable T.");
     static_assert(std::is_trivially_copyable_v<TKey>, "TPodOrderedSlots<T, TKey> requires trivially copyable TKey.");
 
