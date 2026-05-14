@@ -21,6 +21,8 @@
 #include "threading/CThreadControlState.hpp"
 #include "threading/CWaitPredicate.hpp"
 #include "threading/transports/bundles/TOwningBundle.hpp"
+#include "threading/transports/bundles/TQueueBundle.hpp"
+#include "types/typeless_pod.hpp"
 #include "types/typeless.hpp"
 
 //struct FileLoadRequestMsg
