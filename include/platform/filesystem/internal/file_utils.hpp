@@ -23,9 +23,9 @@
 namespace platform::filesystem
 {
 
-enum class OpenMode : std::uint8_t { BinaryRead = 0u, BinaryWrite, BinaryAppend, TextWrite, TextAppend };
+enum class EOpenMode : std::uint8_t { BinaryRead = 0u, BinaryWrite, BinaryAppend, TextWrite, TextAppend };
 
-FILE* openFile(const path::NativePath& file_path, const OpenMode mode = OpenMode::BinaryRead) noexcept;
+FILE* openFile(const path::NativePath& file_path, const EOpenMode mode = EOpenMode::BinaryRead) noexcept;
 void removeFile(const path::NativePath& file_path) noexcept;
 bool renameFile(const path::NativePath& src_path, const path::NativePath& dst_path) noexcept;
 bool flushToDisk(std::FILE* const handle) noexcept;

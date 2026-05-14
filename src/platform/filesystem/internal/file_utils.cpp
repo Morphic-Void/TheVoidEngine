@@ -27,7 +27,7 @@
 namespace platform::filesystem
 {
 
-std::FILE* openFile(const path::NativePath& file_path, const OpenMode mode) noexcept
+std::FILE* openFile(const path::NativePath& file_path, const EOpenMode mode) noexcept
 {
     std::FILE* handle = nullptr;
     if (!file_path.is_empty())

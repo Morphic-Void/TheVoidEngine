@@ -27,7 +27,7 @@ CByteBuffer loadFile(const char* const utf8_path, const std::size_t pad) noexcep
     path::NativePath std_path = path::makeNativePath(utf8_path);
     if (!std_path.is_empty())
     {
-        std::FILE* handle = openFile(std_path, OpenMode::BinaryRead);
+        std::FILE* handle = openFile(std_path, EOpenMode::BinaryRead);
         if (handle != nullptr)
         {
             bool success = false;
@@ -75,7 +75,7 @@ bool saveFile(const char* const utf8_path, const CByteConstView& view) noexcept
             path::NativePath tmp_path = path::makeTempNativePath(std_path);
             if (!tmp_path.is_empty())
             {
-                std::FILE* handle = openFile(tmp_path, OpenMode::BinaryWrite);
+                std::FILE* handle = openFile(tmp_path, EOpenMode::BinaryWrite);
                 if (handle != nullptr)
                 {
                     const std::size_t size = view.size();

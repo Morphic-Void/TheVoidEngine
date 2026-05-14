@@ -23,7 +23,7 @@ bool Log::open(const char* utf8_path, const bool append) noexcept
         path::NativePath std_path = path::makeNativePath(utf8_path);
         if (!std_path.is_empty())
         {
-            m_stream = openFile(std_path, (append ? OpenMode::TextAppend : OpenMode::TextWrite));
+            m_stream = openFile(std_path, (append ? EOpenMode::TextAppend : EOpenMode::TextWrite));
         }
     }
     return m_stream != nullptr;

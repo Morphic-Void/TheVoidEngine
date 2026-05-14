@@ -28,7 +28,7 @@ namespace platform::system
 //  Process priority
 //==============================================================================
 
-bool set_current_process_priority(const ProcessPriority priority) noexcept
+bool set_current_process_priority(const EProcessPriority priority) noexcept
 {
 #if MV_PLATFORM_WINDOWS
 
@@ -36,13 +36,13 @@ bool set_current_process_priority(const ProcessPriority priority) noexcept
 
     switch (priority)
     {
-        case ProcessPriority::Normal:
+        case EProcessPriority::Normal:
             native_priority = NORMAL_PRIORITY_CLASS;
             break;
-        case ProcessPriority::AboveNormal:
+        case EProcessPriority::AboveNormal:
             native_priority = ABOVE_NORMAL_PRIORITY_CLASS;
             break;
-        case ProcessPriority::High:
+        case EProcessPriority::High:
             native_priority = HIGH_PRIORITY_CLASS;
             break;
         default:
