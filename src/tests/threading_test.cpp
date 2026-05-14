@@ -18,8 +18,8 @@
 #include "platform/threading/thread_lifetime.hpp"
 #include "platform/threading/thread_naming.hpp"
 #include "platform/threading/thread_priority.hpp"
-#include "threading/CCountingSemaphore.hpp"
 #include "threading/CThreadControlState.hpp"
+#include "threading/CWaitPredicate.hpp"
 #include "threading/transports/bundles/TOwningBundle.hpp"
 #include "types/typeless.hpp"
 
@@ -69,12 +69,11 @@
 //    const char* thread_name;
 //    platform::threading::CThread thread;
 //    platform::threading::EThreadPriority priority;
-//    std::atomic<std::uint32_t> exit_request;
-//    std::atomic<std::uint32_t> heartbeat;
-//    std::atomic<std::uint32_t> exited;
-//    threading::CCountingSemaphore semaphore;
-//    threading::transports::TOwningBundle<ThreadMsg> owned_to_host;
-//    threading::transports::TOwningBundle<ThreadMsg> owned_to_user;
+//    threading::CThreadControlState control_state;
+//    threading::CWaitPredicate wait_predicate; //  suitable for simple workers, jobs with multiple threads should use CCountingSemaphore
+//    threading::transports::TQueue<ThreadMsg> host_to_worker_msgs;
+//    threading::transports::TQueue<ThreadMsg> worker_to_host_msgs;
+//    threading::transports::TOwningBundle<ThreadMsg> worker_owned_to_host_owned;
 //};
 //
 //static std::uint32_t bg_thread_file_handling(void* user_data) noexcept
