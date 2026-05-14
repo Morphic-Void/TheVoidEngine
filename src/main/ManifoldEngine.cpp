@@ -51,6 +51,9 @@
 #include "threading/transports/bundles/TOwningBundle.hpp"
 #include "threading/CParkingGate.hpp"
 #include "types/fp16data_t.hpp"
+#include "types/typeless_traits.hpp"
+#include "types/typeless_pod.hpp"
+#include "types/typeless.hpp"
 
 #include "tests/run_tests.hpp"
 
