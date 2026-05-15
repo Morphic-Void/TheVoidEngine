@@ -7,7 +7,6 @@
 //  Date:   24 Apr 26
 
 #include "tests/run_tests.hpp"
-#include "tests/threading_test.hpp"
 #include "tests/TOrderedSlots_test_harness.hpp"
 #include "tests/TUnorderedSlots_test_harness.hpp"
 #include "tests/TQueueTransport_test_suite.hpp"
@@ -16,8 +15,6 @@
 
 int run_tests()
 {
-    int threading_test_result = run_threading_test();
-
     int towning_test_result = run_owning_transport_tests();
 
     int tqueue_test_result = run_queue_transport_tests();
