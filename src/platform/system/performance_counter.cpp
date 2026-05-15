@@ -204,6 +204,7 @@ bool query_platform_perf_counter_value(std::uint64_t& out_value) noexcept
 
     out_value = static_cast<std::uint64_t>(counter.QuadPart);
     return true;
+
 #elif MV_PLATFORM_LINUX
 
     return query_posix_perf_counter_value(CLOCK_MONOTONIC_RAW, out_value);
