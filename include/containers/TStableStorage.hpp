@@ -91,7 +91,7 @@ private:
     [[nodiscard]] std::size_t buffer_slot(const std::size_t slot_index) const noexcept { return slot_index & m_slot_mask; }
     void move_from(TStableStorage& src) noexcept;
 
-    memory::TMemoryToken<memory::TMemoryToken<T>> m_buffers = memory::TMemoryToken<memory::TMemoryToken<T>>{};
+    memory::TMemoryToken<T*> m_buffers{};
 
     std::size_t m_buffer_capacity = 0u;
     std::size_t m_buffer_shift = 0u;
@@ -138,12 +138,12 @@ inline bool TStableStorage<T>::is_valid() const noexcept
         ((m_slot_capacity & m_slot_mask) == 0u) &&
         ((m_slot_capacity >> m_buffer_shift) <= m_buffer_capacity))
     {   //  core invariants hold, now check the buffer pointers
-        const memory::TMemoryToken<T>* const buffers = m_buffers.data();
         const std::size_t used_buffer_count = buffer_count();
+        const T** const buffers = m_buffers.data();
         std::size_t buffer_index = 0u;
         while (buffer_index < used_buffer_count)
         {   //  check the allocation state of the allocated buffers
-            if (buffers[buffer_index].data() == nullptr)
+            if (buffers[buffer_index] == nullptr)
             {   //  an allocated buffer is missing allocation
                 return false;
             }
@@ -151,7 +151,7 @@ inline bool TStableStorage<T>::is_valid() const noexcept
         }
         while (buffer_index < m_buffer_capacity)
         {   //  check the allocation state of the unnallocated buffers
-            if (buffers[buffer_index].data() != nullptr)
+            if (buffers[buffer_index] != nullptr)
             {   //  an unallocated buffer has allocation
                 return false;
             }
@@ -201,21 +201,23 @@ inline T* TStableStorage<T>::map_index(const std::size_t slot_index) noexcept
                 }
                 m_buffer_capacity <<= 1u;
             }
-            memory::TMemoryToken<T>* const buffers = m_buffers.data();
+            T** const buffers = m_buffers.data();
             if (buffers == nullptr)
             {
                 return nullptr;
             }
-            if (!buffers[next_buffer_index].allocate(slots_per_buffer))
+            T* const buffer = memory::t_allocate<T>(slots_per_buffer);
+            if (buffer == nullptr)
             {   //  allocation failed
                 return nullptr;
             }
+            buffers[next_buffer_index] = buffer;
             m_slot_capacity += slots_per_buffer;
         }
-        memory::TMemoryToken<T>* const buffers = m_buffers.data();
+        T** const buffers = m_buffers.data();
         if (buffers != nullptr)
         {
-            T* buffer = buffers[buffer_index(slot_index)].data();
+            T* buffer = buffers[buffer_index(slot_index)];
             if (buffer != nullptr)
             {
                 return buffer + buffer_slot(slot_index);
@@ -230,10 +232,10 @@ inline T* TStableStorage<T>::index_ptr(const std::size_t slot_index) const noexc
 {
     if (is_ready() && (slot_index < m_slot_capacity))
     {
-        memory::TMemoryToken<T>* const buffers = m_buffers.data();
+        T** const buffers = m_buffers.data();
         if (buffers != nullptr)
         {
-            T* buffer = buffers[buffer_index(slot_index)].data();
+            T* buffer = buffers[buffer_index(slot_index)];
             if (buffer != nullptr)
             {
                 return buffer + buffer_slot(slot_index);
@@ -271,16 +273,16 @@ inline bool TStableStorage<T>::initialise(const std::size_t slots_per_buffer) no
 template<typename T>
 inline void TStableStorage<T>::deallocate() noexcept
 {
-    memory::TMemoryToken<T>* buffers = m_buffers.data();
+    T** const buffers = m_buffers.data();
     if (buffers != nullptr)
     {
         std::size_t count = m_buffer_capacity;
         while (count)
         {
             --count;
-            if (buffers[count].data() != nullptr)
+            if (buffers[count] != nullptr)
             {
-                buffers[count].deallocate();
+                memory::t_deallocate(buffers[count]);
             }
         }
         m_buffers.deallocate();
