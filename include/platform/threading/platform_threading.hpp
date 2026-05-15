@@ -10,10 +10,10 @@
 //  - Requires C++17 or later.
 //  - No exceptions.
 //
-//  Convenience include for low-level platform threading primitives.
+//  Convenience include for the small low-level native/platform
+//  threading primitive wrappers.
 //
-//  This header aggregates the small native/platform threading wrappers. Include
-//  individual primitive headers when a narrower dependency is preferred.
+//  Include headers when a narrower dependency is preferred.
 
 #pragma once
 
