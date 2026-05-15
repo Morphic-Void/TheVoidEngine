@@ -65,7 +65,7 @@ public:
     explicit operator bool() const noexcept { return m_typeless != nullptr; }
 
     //  Type identity
-    std::size_t type_id() const noexcept { return (m_typeless != nullptr) ? m_typeless->type_id() : std::size_t{ 0u }; }
+    std::size_t query_type_id() const noexcept { return (m_typeless != nullptr) ? m_typeless->query_type_id() : std::size_t{ 0u }; }
 
     //  Creation
     template<typename T, std::size_t type_id>
@@ -79,7 +79,7 @@ public:
     {
     public:
         virtual void destroy_and_deallocate() noexcept = 0;
-        virtual std::size_t type_id() const noexcept = 0;
+        virtual std::size_t query_type_id() const noexcept = 0;
 
     protected:
         ~ITypeless() noexcept = default;
@@ -110,8 +110,6 @@ class TTypeless final : public CTypeless::ITypeless
 
 public:
     static constexpr std::size_t k_type_id = type_id;
-    static constexpr std::size_t k_size = sizeof(TTypeless);
-    static constexpr std::size_t k_align = alignof(TTypeless);
 
 public:
 
@@ -127,11 +125,12 @@ private:
 
     void destroy_and_deallocate() noexcept override final
     {
+        using node_type = TTypeless<T, type_id>;
         this->~TTypeless();
-        byte_deallocate(this, k_align);
+        byte_deallocate(this, alignof(node_type));
     }
 
-    std::size_t type_id() const noexcept override final
+    std::size_t query_type_id() const noexcept override final
     {
         return k_type_id;
     }
@@ -146,7 +145,7 @@ private:
 template<typename T, std::size_t type_id>
 T* typeless_cast(CTypeless& typeless) noexcept
 {
-    if ((typeless.m_typeless == nullptr) || (typeless.m_typeless->type_id() != type_id))
+    if ((typeless.m_typeless == nullptr) || (typeless.m_typeless->query_type_id() != type_id))
     {
         return nullptr;
     }
@@ -156,7 +155,7 @@ T* typeless_cast(CTypeless& typeless) noexcept
 template<typename T, std::size_t type_id>
 const T* typeless_cast(const CTypeless& typeless) noexcept
 {
-    if ((typeless.m_typeless == nullptr) || (typeless.m_typeless->type_id() != type_id))
+    if ((typeless.m_typeless == nullptr) || (typeless.m_typeless->query_type_id() != type_id))
     {
         return nullptr;
     }
@@ -189,7 +188,7 @@ inline CTypeless CTypeless::create() noexcept
 {
     using node_type = TTypeless<T, type_id>;
     CTypeless typeless;
-    void* const memory = byte_allocate(node_type::k_size, node_type::k_align);
+    void* const memory = byte_allocate(sizeof(node_type), alignof(node_type));
     MV_HARD_ASSERT(memory != nullptr);
     if (memory != nullptr)
     {
