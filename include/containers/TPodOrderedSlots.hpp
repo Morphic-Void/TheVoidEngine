@@ -299,7 +299,7 @@ inline bool TPodOrderedSlots<T, TKey>::initialise(const std::size_t initial_slot
             }
             m_slots.deallocate();
         }
-        base_class::shutdown();
+        (void)base_class::shutdown();
     }
     return false;
 }
@@ -307,7 +307,7 @@ inline bool TPodOrderedSlots<T, TKey>::initialise(const std::size_t initial_slot
 template<typename T, typename TKey>
 inline void TPodOrderedSlots<T, TKey>::deallocate() noexcept
 {
-    base_class::shutdown();
+    (void)base_class::shutdown();
     m_slots.deallocate();
     m_keys.deallocate();
 }

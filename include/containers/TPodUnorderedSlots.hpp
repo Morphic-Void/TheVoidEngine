@@ -249,7 +249,7 @@ inline bool TPodUnorderedSlots<T>::initialise(const std::size_t initial_slot_cou
             (void)m_slots.set_size(size);
             return true;
         }
-        base_class::shutdown();
+        (void)base_class::shutdown();
     }
     return false;
 }
@@ -257,7 +257,7 @@ inline bool TPodUnorderedSlots<T>::initialise(const std::size_t initial_slot_cou
 template<typename T>
 inline void TPodUnorderedSlots<T>::deallocate() noexcept
 {
-    base_class::shutdown();
+    (void)::shutdown();
     m_slots.deallocate();
 }
 

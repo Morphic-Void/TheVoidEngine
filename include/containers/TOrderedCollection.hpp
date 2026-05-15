@@ -377,7 +377,7 @@ inline bool TOrderedCollection<T, TKey>::initialise(const std::size_t initial_sl
             }
             m_storage.deallocate();
         }
-        base_class::shutdown();
+        (void)base_class::shutdown();
     }
     return false;
 }
@@ -386,7 +386,7 @@ template<typename T, typename TKey>
 inline void TOrderedCollection<T, TKey>::deallocate() noexcept
 {
     deconstruct_payload();
-    base_class::shutdown();
+    (void)base_class::shutdown();
     m_storage.deallocate();
     m_slots.deallocate();
     m_keys.deallocate();
