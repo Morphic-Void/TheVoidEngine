@@ -72,7 +72,7 @@
 #include <cstddef>      //  std::size_t
 #include <cstdint>      //  std::uint8_t
 #include <cstring>      //  std::memset
-#include <type_traits>  //  std::is_trivially_copyable
+#include <type_traits>  //  std::is_trivially_copyable_v
 
 #include "memory_allocation.hpp"
 #include "bit_utils/bit_ops.hpp"
@@ -841,6 +841,7 @@ inline void TMemoryToken<T>::deallocate() noexcept
 template<typename T>
 inline bool TMemoryToken<T>::clone(const TMemoryToken<T>& src, const std::size_t size) noexcept
 {
+    static_assert(std::is_trivially_copyable_v<T>, "TMemoryToken<T>::clone requires trivially copyable T");
     if (size == 0u)
     {
         deallocate();
