@@ -62,6 +62,7 @@ public:
     void request_exit() noexcept;
 
     //  Controller side queries
+    bool query_ready() const noexcept;
     EThreadRunState query_state() const noexcept;
     std::uint32_t query_heartbeat_epoch() const noexcept;
     std::uint32_t query_failure_code() const noexcept;
@@ -105,6 +106,12 @@ inline void CThreadControlState::reset() noexcept
 inline void CThreadControlState::request_exit() noexcept
 {
     m_exit_request.store(1u, std::memory_order_release);
+}
+
+inline bool CThreadControlState::query_ready() const noexcept
+{
+    EThreadRunState state = query_state();
+    return (state == EThreadRunState::Running) || (state == EThreadRunState::Waiting);
 }
 
 inline EThreadRunState CThreadControlState::query_state() const noexcept
