@@ -19,6 +19,8 @@
 
 #include <atomic>       //  std::atomic
 #include <cstdint>      //  std::int32_t, std::uint32_t
+#include <iostream>     //  cout
+#include <utility>      //  std::move
 
 #include "host/host.hpp"
 #include "containers/containers.hpp"
@@ -63,7 +65,7 @@ struct UnrecognisedMsg { std::size_t msg_id; };
 
 struct FileLoadRequest { const char* file; };
 struct FileSaveRequest { const char* file; CByteConstView* view; };
-struct TgaLoadRequest { const char* file; };
+struct TgaLoadRequest { const char* file; bool vflip; };
 struct TgaSaveRequest { const char* file; image::codec::tga::EncodeOptions* options; CByteRectConstView* view; };
 struct TgaEncodeRequest { CByteRectConstView* view; image::codec::tga::EncodeOptions* options; };
 struct TgaDecodeRequest { CByteConstView* view; bool vflip; };
@@ -122,7 +124,7 @@ struct WorkerThreadPackage
 
 struct WorkerThreadProvisioning
 {
-    WorkerThreadProvisioning(WorkerThreadPackage& pkg) noexcept;
+    WorkerThreadProvisioning(WorkerThreadPackage& package) noexcept;
     ~WorkerThreadProvisioning() noexcept = default;
     ThreadConfig& thread_config;
     threading::CThreadControlState& control_state;
@@ -133,20 +135,20 @@ struct WorkerThreadProvisioning
     threading::transports::TQueueConsumerEndpoint<threading::CPodThreadMsg>& inbound_msgs;
 };
 
-inline WorkerThreadProvisioning::WorkerThreadProvisioning(WorkerThreadPackage& pkg) noexcept :
-    thread_config{ pkg.thread_config },
-    control_state{ pkg.control_state },
-    wait_predicate{ pkg.wait_predicate },
-    parking_ticket{ pkg.parking_ticket },
-    outbound_msgs_owning{ pkg.worker_owned_to_host_owned.producer },
-    outbound_msgs{ pkg.worker_to_host_msgs.producer },
-    inbound_msgs{ pkg.host_to_worker_msgs.consumer }
+inline WorkerThreadProvisioning::WorkerThreadProvisioning(WorkerThreadPackage& package) noexcept :
+    thread_config{ package.thread_config },
+    control_state{ package.control_state },
+    wait_predicate{ package.wait_predicate },
+    parking_ticket{ package.parking_ticket },
+    outbound_msgs_owning{ package.worker_owned_to_host_owned.producer },
+    outbound_msgs{ package.worker_to_host_msgs.producer },
+    inbound_msgs{ package.host_to_worker_msgs.consumer }
 {
 }
 
 struct WorkerThreadController
 {
-    WorkerThreadController(WorkerThreadPackage& pkg) noexcept;
+    WorkerThreadController(WorkerThreadPackage& package) noexcept;
     ~WorkerThreadController() noexcept = default;
     platform::threading::CThread& thread;
     bool& thread_created;
@@ -158,15 +160,15 @@ struct WorkerThreadController
     threading::transports::TOwningConsumerEndpoint<memory::CTypeless>& inbound_msgs_owning;
 };
 
-inline WorkerThreadController::WorkerThreadController(WorkerThreadPackage& pkg) noexcept :
-    thread{ pkg.thread },
-    thread_created{ pkg.thread_created },
-    thread_config{ pkg.thread_config },
-    control_state{ pkg.control_state },
-    wait_predicate{ pkg.wait_predicate },
-    inbound_msgs{ pkg.worker_to_host_msgs.consumer },
-    outbound_msgs{ pkg.host_to_worker_msgs.producer },
-    inbound_msgs_owning{ pkg.worker_owned_to_host_owned.consumer }
+inline WorkerThreadController::WorkerThreadController(WorkerThreadPackage& package) noexcept :
+    thread{ package.thread },
+    thread_created{ package.thread_created },
+    thread_config{ package.thread_config },
+    control_state{ package.control_state },
+    wait_predicate{ package.wait_predicate },
+    inbound_msgs{ package.worker_to_host_msgs.consumer },
+    outbound_msgs{ package.host_to_worker_msgs.producer },
+    inbound_msgs_owning{ package.worker_owned_to_host_owned.consumer }
 {
 }
 
@@ -176,6 +178,8 @@ static std::uint32_t worker_thread(void* user_data) noexcept
     WorkerThreadProvisioning provisioning = *reinterpret_cast<WorkerThreadProvisioning*>(user_data);
     provisioning.control_state.mark_starting();
 
+    std::cout << "Worker (" << provisioning.thread_config.thread_name << ") : Starting\n";
+
     //  Apply standard configuration
     std::size_t thread_system_id = provisioning.thread_config.thread_system_id; // This needs to be stored in TLS for the real implementation
     (void)platform::threading::set_current_thread_name(provisioning.thread_config.thread_name);
@@ -184,8 +188,13 @@ static std::uint32_t worker_thread(void* user_data) noexcept
     std::uint32_t epoch = 0u;
     while (!provisioning.control_state.is_exit_requested())
     {
+        std::cout << "Worker ("<< provisioning.thread_config.thread_name << ") : Waiting\n";
+
         provisioning.control_state.mark_waiting();
         epoch = provisioning.wait_predicate.wait_until_not_equal(provisioning.parking_ticket, epoch);
+
+        std::cout << "Worker (" << provisioning.thread_config.thread_name << ") : Running\n";
+
         provisioning.control_state.mark_running();
         provisioning.control_state.advance_heartbeat();
         while (!provisioning.control_state.is_exit_requested() && (provisioning.inbound_msgs.refresh_readable_count() != 0u))
@@ -193,10 +202,14 @@ static std::uint32_t worker_thread(void* user_data) noexcept
             threading::CPodThreadMsg inbound_msg;
             if (provisioning.inbound_msgs.read(inbound_msg))
             {
+                std::cout << "Worker (" << provisioning.thread_config.thread_name << ") : Message received\n";
+
                 switch (inbound_msg.payload.query_type_id())
                 {
                     case (k_type_id_v<FileLoadRequest>):
                     {
+                        std::cout << "Worker (" << provisioning.thread_config.thread_name << ") : File load request\n";
+
                         FileLoadRequest request;
                         (void)inbound_msg.payload.copy_to(request);
                         memory::CTypeless outbound_msg = create_typeless<FileLoadResultOwning>();
@@ -208,6 +221,8 @@ static std::uint32_t worker_thread(void* user_data) noexcept
                     }
                     case (k_type_id_v<FileSaveRequest>):
                     {
+                        std::cout << "Worker (" << provisioning.thread_config.thread_name << ") : File save request\n";
+
                         FileSaveRequest request;
                         (void)inbound_msg.payload.copy_to(request);
                         FileSaveResult result;
@@ -220,6 +235,8 @@ static std::uint32_t worker_thread(void* user_data) noexcept
                     }
                     case (k_type_id_v<TgaEncodeRequest>):
                     {
+                        std::cout << "Worker (" << provisioning.thread_config.thread_name << ") : TGA encode request\n";
+
                         TgaEncodeRequest request;
                         (void)inbound_msg.payload.copy_to(request);
                         memory::CTypeless outbound_msg = create_typeless<TgaEncodeResultOwning>();
@@ -231,6 +248,8 @@ static std::uint32_t worker_thread(void* user_data) noexcept
                     }
                     case (k_type_id_v<TgaDecodeRequest>):
                     {
+                        std::cout << "Worker (" << provisioning.thread_config.thread_name << ") : TGA decode request\n";
+
                         TgaDecodeRequest request;
                         (void)inbound_msg.payload.copy_to(request);
                         memory::CTypeless outbound_msg = create_typeless<TgaDecodeResultOwning>();
@@ -241,7 +260,9 @@ static std::uint32_t worker_thread(void* user_data) noexcept
                         break;
                     }
                     default:
-                    {   //  need some way of extracting the requester_slot_id
+                    {
+                        std::cout << "Worker (" << provisioning.thread_config.thread_name << ") : Unknown message type\n";
+
                         UnrecognisedMsg result;
                         result.msg_id = inbound_msg.payload.query_type_id();
                         threading::CPodThreadMsg outbound_msg;
@@ -261,6 +282,8 @@ static std::uint32_t worker_thread(void* user_data) noexcept
 
 static std::uint32_t app_thread(void* user_data) noexcept
 {
+    std::cout << "Application: Starting\n";
+
     //  Initialise the provisioning
     WorkerThreadProvisioning provisioning = *reinterpret_cast<WorkerThreadProvisioning*>(user_data);
     provisioning.control_state.mark_starting();
@@ -280,7 +303,7 @@ static std::uint32_t app_thread(void* user_data) noexcept
     {
         bool complete = false;
         bool success = false;
-        CByteRectConstView* view = nullptr;
+        CByteRectConstView view;
         image::codec::tga::decoded_image_desc desc = image::codec::tga::decoded_image_desc::RGBA;
     };
 
@@ -296,16 +319,18 @@ static std::uint32_t app_thread(void* user_data) noexcept
     provisioning.control_state.mark_running();
 
     {
-        TgaLoadRequest request;
-        request.file = "d:/test_input.tga";
+        TgaLoadRequest tga_load_request;
+        tga_load_request.file = "d:/test_input.tga";
         threading::CPodThreadMsg outbound_msg;
         outbound_msg.async_slot = 0;
-        outbound_msg.payload.assign(request);
+        outbound_msg.payload.assign(tga_load_request);
         (void)provisioning.outbound_msgs.post(outbound_msg);
     }
 
     enum class ETgaTestStates : std::uint32_t { no_state = 0u, waiting_for_tga_load, waiting_for_tga_save, done };
     ETgaTestStates tga_state = ETgaTestStates::waiting_for_tga_load;
+
+    image::codec::tga::EncodeOptions tga_encode_options;
 
     while (!provisioning.control_state.is_exit_requested())
     {
@@ -314,46 +339,54 @@ static std::uint32_t app_thread(void* user_data) noexcept
         {
             provisioning.control_state.advance_heartbeat();
             perf_counter.update();
+
+            //std::cout << "Application: Heartbeat\n";
+
         }
 
         bool state_updated = false;
-        if (provisioning.inbound_msgs.refresh_readable_count() != 0u)
+        threading::CPodThreadMsg inbound_msg;
+        if (provisioning.inbound_msgs.read(inbound_msg))
         {
-            threading::CPodThreadMsg inbound_msg;
-            if (provisioning.inbound_msgs.read(inbound_msg))
+            std::cout << "Application: Message received\n";
+
+            switch (inbound_msg.payload.query_type_id())
             {
-                switch (inbound_msg.payload.query_type_id())
+                case (k_type_id_v<TgaLoadResult>):
                 {
-                    case (k_type_id_v<TgaLoadResult>):
-                    {
-                        TgaLoadResult result;
-                        (void)inbound_msg.payload.copy_to(result);
-                        tga_load.view = result.view;
-                        tga_load.desc = result.desc;
-                        tga_load.success = !result.view->is_empty();
-                        tga_load.complete = true;
-                        state_updated = true;
-                        break;
-                    }
-                    case (k_type_id_v<TgaSaveResult>):
-                    {
-                        TgaSaveResult result;
-                        (void)inbound_msg.payload.copy_to(result);
-                        tga_load.success = result.success;
-                        tga_load.complete = true;
-                        state_updated = true;
-                        break;
-                    }
-                    default:
-                    {
-                        UnrecognisedMsg result;
-                        result.msg_id = inbound_msg.payload.query_type_id();
-                        threading::CPodThreadMsg outbound_msg;
-                        outbound_msg.async_slot = inbound_msg.async_slot;
-                        outbound_msg.payload.assign(result);
-                        (void)provisioning.outbound_msgs.post(outbound_msg);
-                        break;
-                    }
+                    std::cout << "Application: TGA load result\n";
+
+                    TgaLoadResult tga_load_result;
+                    (void)inbound_msg.payload.copy_to(tga_load_result);
+                    tga_load.view = *tga_load_result.view;
+                    tga_load.desc = tga_load_result.desc;
+                    tga_load.success = !tga_load_result.view->is_empty();
+                    tga_load.complete = true;
+                    state_updated = true;
+                    break;
+                }
+                case (k_type_id_v<TgaSaveResult>):
+                {
+                    std::cout << "Application: TGA save result\n";
+
+                    TgaSaveResult tga_save_result;
+                    (void)inbound_msg.payload.copy_to(tga_save_result);
+                    tga_load.success = tga_save_result.success;
+                    tga_load.complete = true;
+                    state_updated = true;
+                    break;
+                }
+                default:
+                {
+                    std::cout << "Application: Unknown message type\n";
+
+                    UnrecognisedMsg result;
+                    result.msg_id = inbound_msg.payload.query_type_id();
+                    threading::CPodThreadMsg outbound_msg;
+                    outbound_msg.async_slot = inbound_msg.async_slot;
+                    outbound_msg.payload.assign(result);
+                    (void)provisioning.outbound_msgs.post(outbound_msg);
+                    break;
                 }
             }
         }
@@ -370,19 +403,18 @@ static std::uint32_t app_thread(void* user_data) noexcept
                         break;
                     }
 
-                    image::codec::tga::EncodeOptions options;
-                    options.src = (tga_load.desc == image::codec::tga::decoded_image_desc::Gray) ?
+                    tga_encode_options.src = (tga_load.desc == image::codec::tga::decoded_image_desc::Gray) ?
                         image::codec::tga::image_encode_src::Gray :
                         image::codec::tga::image_encode_src::AutoTrue32;
 
-                    TgaSaveRequest request;
-                    request.file = "d:/test_output.tga";
-                    request.view = tga_load.view;
-                    request.options = &options;
+                    TgaSaveRequest tga_save_request;
+                    tga_save_request.file = "d:/test_output.tga";
+                    tga_save_request.view = &tga_load.view;
+                    tga_save_request.options = &tga_encode_options;
 
                     threading::CPodThreadMsg outbound_msg;
                     outbound_msg.async_slot = 0;
-                    outbound_msg.payload.assign(request);
+                    outbound_msg.payload.assign(tga_save_request);
                     (void)provisioning.outbound_msgs.post(outbound_msg);
 
                     tga_state = ETgaTestStates::waiting_for_tga_save;
@@ -411,13 +443,14 @@ static std::uint32_t app_thread(void* user_data) noexcept
 
 int host()
 {
-
-    enum class EWorkerThreadID : std::uint8_t { bg_file_id = 0u, bg_conditioning, application };
+    std::cout << "Host: Starting\n";
 
     ThreadConfig thread_configs[3]{
         {system_ids::bg_file_io, "bg_file_io", platform::threading::EThreadPriority::Background, &worker_thread},
         {system_ids::bg_conditioning, "bg_conditioning", platform::threading::EThreadPriority::Background, &worker_thread},
         {system_ids::application, "application", platform::threading::EThreadPriority::Normal, &app_thread} };
+
+    enum class EWorkerThreadID : std::uint8_t { bg_file_io = 0u, bg_conditioning, application };
 
     std::int32_t worker_slots[3]{};
 
@@ -432,47 +465,41 @@ int host()
     for (std::int32_t thread_index = 0; thread_index <= 2; ++thread_index)
     {   //  needs more error checking
         int32_t worker_slot = worker_thread_packages.emplace();
-        WorkerThreadPackage& pkg = *worker_thread_packages.get_object(worker_slot);
+        WorkerThreadPackage& package = *worker_thread_packages.get_object(worker_slot);
         worker_slots[thread_index] = worker_slot;
-        pkg.thread_config = thread_configs[thread_index];
-        pkg.wait_predicate.acquire_control();
-        pkg.provisioning_slot = worker_thread_provisioning.emplace(pkg);
-        pkg.controller_slot = worker_thread_controllers.emplace(pkg);
-        pkg.thread_created = pkg.thread.create(pkg.thread_config.thread_entry, worker_thread_provisioning.get_object(pkg.provisioning_slot));
+        package.thread_config = thread_configs[thread_index];
+        package.wait_predicate.acquire_control();
+        (void)package.host_to_worker_msgs.transport.initialise_growable(0u);
+        (void)package.worker_to_host_msgs.transport.initialise_growable(0u);
+        (void)package.worker_owned_to_host_owned.transport.initialise(0u);
+        package.provisioning_slot = worker_thread_provisioning.emplace(package);
+        package.controller_slot = worker_thread_controllers.emplace(package);
+        package.thread_created = package.thread.create(package.thread_config.thread_entry, worker_thread_provisioning.get_object(package.provisioning_slot));
     }
 
-    struct AsyncFileLoad
+    struct AsyncTgaSave
     {
-        bool complete = false;
-        bool success = false;
+        const char* file = nullptr;
         CByteBuffer buffer;
+        CByteConstView view;
+        CByteRectBuffer rect_buffer;
+        CByteRectConstView rect_view;
+        image::codec::tga::EncodeOptions options{};
     };
 
-    struct AsyncFileSave
+    struct AsyncTgaLoad
     {
-        bool complete = false;
-        bool success = false;
-    };
-
-    struct AsyncTgaDecode
-    {
-        bool complete = false;
-        bool success = false;
-        CByteRectBuffer buffer;
+        const char* file = nullptr;
+        CByteBuffer buffer;
+        CByteConstView view;
+        CByteRectBuffer rect_buffer;
+        CByteRectConstView rect_view;
+        bool vflip = false;
         image::codec::tga::decoded_image_desc desc = image::codec::tga::decoded_image_desc::RGBA;
     };
 
-    struct AsyncTgaEncode
-    {
-        bool complete = false;
-        bool success = false;
-        CByteBuffer buffer;
-    };
-
-    AsyncFileLoad async_file_load;
-    AsyncFileSave async_file_save;
-    AsyncTgaDecode async_tga_decode;
-    AsyncTgaEncode async_tga_encode;
+    AsyncTgaLoad async_tga_load;
+    AsyncTgaSave async_tga_save;
 
     if (initialised)
     {
@@ -485,24 +512,76 @@ int host()
                 threading::CPodThreadMsg inbound_msg;
                 while (inbound_controller.inbound_msgs.read(inbound_msg))
                 {
+                    std::cout << "Host: Message received\n";
+
                     switch (inbound_msg.payload.query_type_id())
                     {
                         case (k_type_id_v<FileSaveResult>):
                         {
+                            std::cout << "Host: File save result\n";
+
                             FileSaveResult result;
                             (void)inbound_msg.payload.copy_to(result);
+                            std::int32_t outbound_slot = worker_slots[static_cast<std::uint8_t>(EWorkerThreadID::application)];
+                            WorkerThreadController& outbound_controller = *worker_thread_controllers.get_object(outbound_slot);
+                            TgaSaveResult forward;
+                            forward.success = result.success;
+                            threading::CPodThreadMsg outbound_msg;
+                            outbound_msg.async_slot = 0;
+                            outbound_msg.payload.assign(forward);
+                            (void)outbound_controller.outbound_msgs.post(outbound_msg);
+                            outbound_controller.wait_predicate.increment();
+                            outbound_controller.wait_predicate.wake_all_waiters();
                             break;
                         }
                         case (k_type_id_v<TgaLoadRequest>):
                         {
-                            TgaLoadRequest request;
-                            (void)inbound_msg.payload.copy_to(request);
+                            std::cout << "Host: TGA load request\n";
+
+                            TgaLoadRequest tga_load_request;
+                            (void)inbound_msg.payload.copy_to(tga_load_request);
+                            async_tga_load.file = tga_load_request.file;
+                            async_tga_load.vflip = tga_load_request.vflip;
+                            std::int32_t outbound_slot = worker_slots[static_cast<std::uint8_t>(EWorkerThreadID::bg_file_io)];
+                            WorkerThreadController& outbound_controller = *worker_thread_controllers.get_object(outbound_slot);
+                            FileLoadRequest file_load_request;
+                            file_load_request.file = async_tga_load.file;
+                            threading::CPodThreadMsg outbound_msg;
+                            outbound_msg.async_slot = 0;
+                            outbound_msg.payload.assign(file_load_request);
+                            (void)outbound_controller.outbound_msgs.post(outbound_msg);
+                            outbound_controller.wait_predicate.increment();
+                            outbound_controller.wait_predicate.wake_all_waiters();
                             break;
                         }
                         case (k_type_id_v<TgaSaveRequest>):
                         {
-                            TgaSaveRequest request;
-                            (void)inbound_msg.payload.copy_to(request);
+                            std::cout << "Host: TGA save request\n";
+
+                            TgaSaveRequest tga_save_request;
+                            (void)inbound_msg.payload.copy_to(tga_save_request);
+                            async_tga_save.file = tga_save_request.file;
+                            async_tga_save.options = *tga_save_request.options;
+                            async_tga_save.rect_view = *tga_save_request.view;
+                            std::int32_t outbound_slot = worker_slots[static_cast<std::uint8_t>(EWorkerThreadID::bg_conditioning)];
+                            WorkerThreadController& outbound_controller = *worker_thread_controllers.get_object(outbound_slot);
+                            TgaEncodeRequest tga_encode_request;
+                            tga_encode_request.view = &async_tga_save.rect_view;
+                            tga_encode_request.options = &async_tga_save.options;
+                            threading::CPodThreadMsg outbound_msg;
+                            outbound_msg.async_slot = 0;
+                            outbound_msg.payload.assign(tga_encode_request);
+                            (void)outbound_controller.outbound_msgs.post(outbound_msg);
+                            outbound_controller.wait_predicate.increment();
+                            outbound_controller.wait_predicate.wake_all_waiters();
+                            break;
+                        }
+                        case (k_type_id_v<UnrecognisedMsg>):
+                        {
+                            std::cout << "Host: unknown message type\n";
+
+                            UnrecognisedMsg result;
+                            (void)inbound_msg.payload.copy_to(result);
                             break;
                         }
                         default:
@@ -514,25 +593,74 @@ int host()
                 memory::CTypeless inbound_msg_owning;
                 while (inbound_controller.inbound_msgs_owning.read(inbound_msg_owning))
                 {
+                    std::cout << "Host: Owning message received\n";
+
                     switch (inbound_msg_owning.query_type_id())
                     {
                         case (k_type_id_v<FileLoadResultOwning>):
-                        {
+                        {   //  for this test we know that this is in response to our own attempt to load the tga file
+                            std::cout << "Host: Owning file load result\n";
+
                             FileLoadResultOwning& result = *typeless_cast<FileLoadResultOwning>(inbound_msg_owning);
+                            async_tga_load.buffer = std::move(result.buffer);
+                            async_tga_load.view = async_tga_load.buffer.const_view();
+                            std::int32_t outbound_slot = worker_slots[static_cast<std::uint8_t>(EWorkerThreadID::bg_conditioning)];
+                            WorkerThreadController& outbound_controller = *worker_thread_controllers.get_object(outbound_slot);
+                            TgaDecodeRequest tga_decode_request;
+                            tga_decode_request.view = &async_tga_load.view;
+                            tga_decode_request.vflip = async_tga_load.vflip;
+                            threading::CPodThreadMsg outbound_msg;
+                            outbound_msg.async_slot = 0;
+                            outbound_msg.payload.assign(tga_decode_request);
+                            (void)outbound_controller.outbound_msgs.post(outbound_msg);
+                            outbound_controller.wait_predicate.increment();
+                            outbound_controller.wait_predicate.wake_all_waiters();
                             break;
                         }
                         case (k_type_id_v<TgaEncodeResultOwning>):
-                        {
+                        {   //  for this test we know that this is in response to our own attempt to encode the tga file
+                            std::cout << "Host: Owning TGA encode result\n";
+
                             TgaEncodeResultOwning& result = *typeless_cast<TgaEncodeResultOwning>(inbound_msg_owning);
+                            async_tga_save.buffer = std::move(result.buffer);
+                            async_tga_save.view = async_tga_save.buffer.const_view();
+                            std::int32_t outbound_slot = worker_slots[static_cast<std::uint8_t>(EWorkerThreadID::bg_file_io)];
+                            WorkerThreadController& outbound_controller = *worker_thread_controllers.get_object(outbound_slot);
+                            FileSaveRequest file_save_request;
+                            file_save_request.file = async_tga_save.file;
+                            file_save_request.view = &async_tga_save.view;
+                            threading::CPodThreadMsg outbound_msg;
+                            outbound_msg.async_slot = 0;
+                            outbound_msg.payload.assign(file_save_request);
+                            (void)outbound_controller.outbound_msgs.post(outbound_msg);
+                            outbound_controller.wait_predicate.increment();
+                            outbound_controller.wait_predicate.wake_all_waiters();
                             break;
                         }
                         case (k_type_id_v<TgaDecodeResultOwning>):
-                        {
+                        {   //  for this test we know that this is in response to our own attempt to decode the tga file
+                            std::cout << "Host: Owning TGA decode result\n";
+
                             TgaDecodeResultOwning& result = *typeless_cast<TgaDecodeResultOwning>(inbound_msg_owning);
+                            async_tga_load.rect_buffer = std::move(result.buffer);
+                            async_tga_load.rect_view = async_tga_load.rect_buffer.const_view();
+                            async_tga_load.desc = result.desc;
+                            std::int32_t outbound_slot = worker_slots[static_cast<std::uint8_t>(EWorkerThreadID::application)];
+                            WorkerThreadController& outbound_controller = *worker_thread_controllers.get_object(outbound_slot);
+                            TgaLoadResult tga_load_result;
+                            tga_load_result.view = &async_tga_load.rect_view;
+                            tga_load_result.desc = async_tga_load.desc;
+                            threading::CPodThreadMsg outbound_msg;
+                            outbound_msg.async_slot = 0;
+                            outbound_msg.payload.assign(tga_load_result);
+                            (void)outbound_controller.outbound_msgs.post(outbound_msg);
+                            outbound_controller.wait_predicate.increment();
+                            outbound_controller.wait_predicate.wake_all_waiters();
                             break;
                         }
                         default:
                         {
+                            std::cout << "Host: Owning unknown message type\n";
                             break;
                         }
                     }
