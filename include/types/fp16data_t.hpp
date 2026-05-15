@@ -114,6 +114,6 @@ static_assert(std::numeric_limits<float>::is_iec559, "fp16data_t requires IEEE-7
 static_assert(std::numeric_limits<double>::is_iec559, "fp16data_t requires IEEE-754 double");
 static_assert(sizeof(fp16data_t) == sizeof(std::uint16_t), "fp16data_t must be 16 bits");
 static_assert(alignof(fp16data_t) == alignof(std::uint16_t), "fp16data_t alignment mismatch");
-static_assert(std::is_trivially_copyable<fp16data_t>::value, "fp16data_t should be trivially copyable");
+static_assert(std::is_trivially_copyable_v<fp16data_t>, "fp16data_t should be trivially copyable");
 
 #endif	//	#ifndef	__FP16DATA_T_INCLUDED__
