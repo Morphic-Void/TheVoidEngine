@@ -87,7 +87,7 @@ int main()
     {
         if (MV_FAIL_SAFE_ASSERT(memory::set_allocator(host_allocator)))
         {
-            //host();
+            host();
             platform::system::set_current_process_priority(platform::system::EProcessPriority::AboveNormal);
             const std::uint32_t hw_threads_supported = platform::threading::query_hardware_thread_count();
             ret = run_tests();
