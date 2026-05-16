@@ -82,7 +82,7 @@ public:
     [[nodiscard]] bool posting_is_valid() const noexcept;
     [[nodiscard]] bool post(const T& src) noexcept { return post(&src, 1u); }
     [[nodiscard]] bool post(const T* const src, const std::uint32_t count = 1u) noexcept;
-    [[nodiscard]] bool post(const TPodConstView<T>& src) noexcept { return post(src.data(), src.size()); }
+    [[nodiscard]] bool post(const TPodConstView<T>& src) noexcept { return post(src.data(), static_cast<std::uint32_t>(src.size())); }
     [[nodiscard]] std::uint32_t writable_count() const noexcept;
 
     //  Consumer status and operations
@@ -90,7 +90,7 @@ public:
     [[nodiscard]] bool reading_is_valid() const noexcept;
     [[nodiscard]] bool read(T& dst) noexcept { return read(&dst, 1u); }
     [[nodiscard]] bool read(T* const dst, const std::uint32_t count = 1u) noexcept;
-    [[nodiscard]] bool read(const TPodView<T>& dst) noexcept { return read(dst.data(), dst.size()); }
+    [[nodiscard]] bool read(const TPodView<T>& dst) noexcept { return read(dst.data(), static_cast<std::uint32_t>(dst.size())); }
     [[nodiscard]] std::uint32_t readable_count() const noexcept;
 
     //  Setup and teardown
