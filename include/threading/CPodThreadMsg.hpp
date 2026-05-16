@@ -53,9 +53,7 @@ namespace threading
 
 struct PodThreadMsgPayload
 {
-    std::uint64_t a = 0u;
-    std::uint64_t b = 0u;
-    std::uint64_t c = 0u;
+    std::uint64_t typeless[6]{ 0ull, 0ull, 0ull, 0ull, 0ull, 0ull };
 };
 
 //==============================================================================
@@ -65,7 +63,8 @@ struct PodThreadMsgPayload
 
 struct CPodThreadMsg
 {
-    std::int32_t async_slot = 0;
+    std::int32_t async_slot{ 0 };
+    std::uint32_t reserved{ 0u };
     TTypelessPodFor<PodThreadMsgPayload> payload;
 };
 
