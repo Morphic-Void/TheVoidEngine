@@ -89,6 +89,7 @@ void CWaitPredicate::release_control() noexcept
     if (MV_FAIL_SAFE_ASSERT(m_valid && m_has_control))
     {
 #if MV_PLATFORM_HAS_NATIVE_WAIT_WORD
+        increment();
         platform::threading::wake_all_waiters(m_word);
 #else
         if (MV_FAIL_SAFE_ASSERT(m_fallback_gate.has_control()))
