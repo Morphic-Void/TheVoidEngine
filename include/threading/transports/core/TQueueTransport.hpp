@@ -377,11 +377,16 @@ inline std::uint32_t TQueue<T>::refresh_readable_count() noexcept
 {
     if (m_reading_buffer_index == k_null_buffer_index)
     {
+        const std::uint32_t pre_check = m_staged_word.load(std::memory_order_acquire);
+        if ((pre_check & 3u) == 0u)
+        {   //  no published buffer id: either initial sentinel or already-consumed state
+            return 0u;
+        }
         const std::uint32_t received = m_staged_word.exchange(0u, std::memory_order_acq_rel);
         const std::uint32_t received_id = received & 3u;
         const bool received_phase = (received & 4u) != 0u;
         if ((received_id == 0u) || (received_phase != m_reading_phase))
-        {
+        {   //  invalid buffer or phase
             return 0u;
         }
         m_reading_phase = !received_phase;
