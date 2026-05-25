@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "threading/transports/core/TOwningTransport.hpp"
+#include "threading/transports/TOwningTransport.hpp"
 #include "tests/TOwningTransport_test_suite.hpp"
 #include "memory/memory_allocation.hpp"
 #include "debug/debug.hpp"

@@ -24,9 +24,9 @@
 #include "threading/CThreadControlState.hpp"
 #include "threading/CWaitPredicate.hpp"
 #include "threading/CCountingSemaphore.hpp"
-#include "threading/transports/bundles/TBulkBundle.hpp"
-#include "threading/transports/bundles/TOwningBundle.hpp"
-#include "threading/transports/bundles/TQueueBundle.hpp"
-#include "threading/transports/bundles/TRingBundle.hpp"
+#include "threading/transports/TBulkTransport.hpp"
+#include "threading/transports/TOwningTransport.hpp"
+#include "threading/transports/TQueueTransport.hpp"
+#include "threading/transports/TRingTransport.hpp"
 
 #endif  //  #ifndef THREADING_HPP_INCLUDED

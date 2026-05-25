@@ -30,8 +30,8 @@ namespace threading
 enum class EThreadRunState : std::uint32_t
 {
     Empty = 0u,
-    PendingStart,
-    Starting,
+    Pending,
+    Startup,
     Running,
     Waiting,
     Exiting,
@@ -71,7 +71,7 @@ public:
     void mark_pending_start() noexcept;
 
     //  Worker side state control
-    void mark_starting() noexcept;
+    void mark_startup() noexcept;
     void mark_running() noexcept;
     void mark_waiting() noexcept;
     void mark_exiting() noexcept;
@@ -82,7 +82,7 @@ public:
     void advance_heartbeat() noexcept;
 
     //  Worker and controller exit requested query
-    bool is_exit_requested() const noexcept;
+    bool exit_requested() const noexcept;
 
 private:
     std::atomic<std::uint32_t> m_exit_request{ 0u };
@@ -131,12 +131,12 @@ inline std::uint32_t CThreadControlState::query_failure_code() const noexcept
 
 inline void CThreadControlState::mark_pending_start() noexcept
 {
-    m_state.store(static_cast<std::uint32_t>(EThreadRunState::PendingStart), std::memory_order_release);
+    m_state.store(static_cast<std::uint32_t>(EThreadRunState::Pending), std::memory_order_release);
 }
 
-inline void CThreadControlState::mark_starting() noexcept
+inline void CThreadControlState::mark_startup() noexcept
 {
-    m_state.store(static_cast<std::uint32_t>(EThreadRunState::Starting), std::memory_order_release);
+    m_state.store(static_cast<std::uint32_t>(EThreadRunState::Startup), std::memory_order_release);
 }
 
 inline void CThreadControlState::mark_running() noexcept
@@ -170,7 +170,7 @@ inline void CThreadControlState::advance_heartbeat() noexcept
     m_heartbeat_epoch.fetch_add(1u, std::memory_order_acq_rel);
 }
 
-inline bool CThreadControlState::is_exit_requested() const noexcept
+inline bool CThreadControlState::exit_requested() const noexcept
 {
     return m_exit_request.load(std::memory_order_acquire) != 0u;
 }
