@@ -110,8 +110,9 @@ struct ThreadConfig
 class CThreadResources
 {
 public:
-    CThreadResources(const ThreadConfig& thread_config) noexcept : config(thread_config) {}
+    CThreadResources(const ThreadConfig& thread_config) noexcept : config{ thread_config } {}
     ~CThreadResources() noexcept = default;
+
     bool created{ false };
     platform::threading::CThread thread;
     threading::CParkingTicket parking_ticket;
@@ -127,7 +128,7 @@ public:
 class CThreadContext
 {
 public:
-    CThreadContext(CThreadResources& resources) noexcept;
+    CThreadContext(CThreadResources& resources) noexcept : m_resources{ resources } {};
     ~CThreadContext() noexcept = default;
 
     const char* get_name() const noexcept { return m_resources.config.name; }
@@ -147,11 +148,6 @@ public:
 private:
     CThreadResources& m_resources;
 };
-
-inline CThreadContext::CThreadContext(CThreadResources& resources) noexcept :
-    m_resources{ resources }
-{
-}
 
 inline void CThreadContext::startup() noexcept
 {
@@ -181,9 +177,9 @@ public:
     ~CThreadPackage() noexcept = default;
     bool startup() noexcept;
     bool shutdown() noexcept;
-    bool take_ownership(memory::CTypeless& obj) noexcept;
     bool read(threading::CPodThreadMsg& msg) noexcept;
     bool post(const threading::CPodThreadMsg& msg) noexcept;
+    bool take_ownership(memory::CTypeless& obj) noexcept;
     threading::EThreadRunState query_state() const noexcept;
     CThreadContext& get_context() noexcept { return m_context; }
 private:
@@ -193,61 +189,49 @@ private:
 
 inline bool CThreadPackage::startup() noexcept
 {
-    m_resources.control_state.mark_pending_start();
-    if (m_resources.wait_predicate.acquire_control())
+    if (m_resources.host_to_worker_msgs.initialise_growable(0u))
     {
-        if (m_resources.host_to_worker_msgs.initialise_growable(0u))
+        if (m_resources.worker_to_host_msgs.initialise_growable(0u))
         {
-            if (m_resources.worker_to_host_msgs.initialise_growable(0u))
+            if (m_resources.worker_owned_to_host_owned.initialise(0u))
             {
-                if (m_resources.worker_owned_to_host_owned.initialise(0u))
+                if (m_resources.wait_predicate.acquire_control())
                 {
+                    m_resources.control_state.mark_pending();
                     m_resources.created = m_resources.thread.create(m_resources.config.entry_point, &get_context());
                     if (m_resources.created)
                     {
-                        threading::EThreadRunState state;
-                        for (;;)
+                        while (m_resources.control_state.is_starting())
                         {
-                            state = query_state();
-                            if ((state == threading::EThreadRunState::Waiting) ||
-                                (state == threading::EThreadRunState::Running) ||
-                                (state == threading::EThreadRunState::Exited) ||
-                                (state == threading::EThreadRunState::Failed))
-                            {
-                                break;
-                            }
                             std::this_thread::yield();
                         }
-                        if (m_resources.control_state.query_ready())
+                        if (m_resources.control_state.is_ready())
                         {
                             return true;
                         }
+                        (void)m_resources.thread.join_and_close();
                         m_resources.created = false;
                     }
-                    m_resources.worker_owned_to_host_owned.deallocate();
+                    m_resources.control_state.mark_empty();
+                    m_resources.wait_predicate.release_control();
                 }
-                m_resources.worker_to_host_msgs.deallocate();
+                m_resources.worker_owned_to_host_owned.deallocate();
             }
-            m_resources.host_to_worker_msgs.deallocate();
+            m_resources.worker_to_host_msgs.deallocate();
         }
-        m_resources.wait_predicate.release_control();
+        m_resources.host_to_worker_msgs.deallocate();
     }
     return false;
 }
 
 inline bool CThreadPackage::shutdown() noexcept
 {
-    if (m_resources.created)
+    if (m_resources.created && m_resources.wait_predicate.has_control())
     {
         m_resources.control_state.request_exit();
         m_resources.wait_predicate.release_control();
-        for (;;)
-        {   //  wait for the worker to either exit or re-enter a waiting state
-            threading::EThreadRunState state = query_state();
-            if ((state == threading::EThreadRunState::Exited) || (state == threading::EThreadRunState::Failed))
-            {
-                break;
-            }
+        while (!m_resources.control_state.is_done())
+        {
             std::this_thread::yield();
         }
         m_resources.created = m_resources.thread.join_and_close();
@@ -259,11 +243,6 @@ inline bool CThreadPackage::shutdown() noexcept
         }
     }
     return m_resources.created;
-}
-
-inline bool CThreadPackage::take_ownership(memory::CTypeless& msg) noexcept
-{
-    return m_resources.worker_owned_to_host_owned.read(msg);
 }
 
 inline bool CThreadPackage::read(threading::CPodThreadMsg& msg) noexcept
@@ -279,6 +258,11 @@ inline bool CThreadPackage::post(const threading::CPodThreadMsg& msg) noexcept
         m_resources.wait_predicate.poke_epoch_and_wake_one();
     }
     return success;
+}
+
+inline bool CThreadPackage::take_ownership(memory::CTypeless& msg) noexcept
+{
+    return m_resources.worker_owned_to_host_owned.read(msg);
 }
 
 inline threading::EThreadRunState CThreadPackage::query_state() const noexcept

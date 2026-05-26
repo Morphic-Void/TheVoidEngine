@@ -62,15 +62,18 @@ public:
     void request_exit() noexcept;
 
     //  Controller side queries
-    bool query_ready() const noexcept;
+    bool is_starting() const noexcept;
+    bool is_ready() const noexcept;
+    bool is_done() const noexcept;
     EThreadRunState query_state() const noexcept;
     std::uint32_t query_heartbeat_epoch() const noexcept;
     std::uint32_t query_failure_code() const noexcept;
 
     //  Controller side thread state control
-    void mark_pending_start() noexcept;
+    void mark_empty() noexcept;
+    void mark_pending() noexcept;
 
-    //  Worker side state control
+    //  Worker side state signalling
     void mark_startup() noexcept;
     void mark_running() noexcept;
     void mark_waiting() noexcept;
@@ -108,10 +111,22 @@ inline void CThreadControlState::request_exit() noexcept
     m_exit_request.store(1u, std::memory_order_release);
 }
 
-inline bool CThreadControlState::query_ready() const noexcept
+inline bool CThreadControlState::is_starting() const noexcept
+{
+    EThreadRunState state = query_state();
+    return (state == EThreadRunState::Pending) || (state == EThreadRunState::Startup);
+}
+
+inline bool CThreadControlState::is_ready() const noexcept
 {
     EThreadRunState state = query_state();
     return (state == EThreadRunState::Running) || (state == EThreadRunState::Waiting);
+}
+
+inline bool CThreadControlState::is_done() const noexcept
+{
+    EThreadRunState state = query_state();
+    return (state == EThreadRunState::Exited) || (state == EThreadRunState::Failed);
 }
 
 inline EThreadRunState CThreadControlState::query_state() const noexcept
@@ -129,7 +144,12 @@ inline std::uint32_t CThreadControlState::query_failure_code() const noexcept
     return m_failure_code.load(std::memory_order_acquire);
 }
 
-inline void CThreadControlState::mark_pending_start() noexcept
+inline void CThreadControlState::mark_empty() noexcept
+{
+    m_state.store(static_cast<std::uint32_t>(EThreadRunState::Empty), std::memory_order_release);
+}
+
+inline void CThreadControlState::mark_pending() noexcept
 {
     m_state.store(static_cast<std::uint32_t>(EThreadRunState::Pending), std::memory_order_release);
 }
