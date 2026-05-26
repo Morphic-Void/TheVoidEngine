@@ -19,14 +19,14 @@
 #ifndef THREADING_HPP_INCLUDED
 #define THREADING_HPP_INCLUDED
 
-#include "threading/CParkingGate.hpp"
-#include "threading/CPodThreadMsg.hpp"
-#include "threading/CThreadControlState.hpp"
-#include "threading/CWaitPredicate.hpp"
-#include "threading/CCountingSemaphore.hpp"
-#include "threading/transports/TBulkTransport.hpp"
-#include "threading/transports/TOwningTransport.hpp"
-#include "threading/transports/TQueueTransport.hpp"
-#include "threading/transports/TRingTransport.hpp"
+#include "CParkingGate.hpp"
+#include "CPodThreadMsg.hpp"
+#include "CThreadControlState.hpp"
+#include "CWaitPredicate.hpp"
+#include "CCountingSemaphore.hpp"
+#include "transports/transports.hpp"
+#include "transports/bundles/transport_bundles.hpp"
+#include "transports/endpoints/transport_endpoints.hpp"
+#include "transports/interfaces/transport_interfaces.hpp"
 
 #endif  //  #ifndef THREADING_HPP_INCLUDED
