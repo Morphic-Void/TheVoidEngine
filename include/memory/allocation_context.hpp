@@ -228,7 +228,7 @@ inline std::uint32_t CAllocationContext::get_peak_allocation_count() const noexc
     return m_peak_allocation_count;
 }
 
-inline std::uint32_t CAllocationContext::get_lifetime_allocation_count() const noexcept
+inline std::uint64_t CAllocationContext::get_lifetime_allocation_count() const noexcept
 {
     return m_lifetime_allocation_count;
 }
