@@ -402,6 +402,9 @@
     <ClInclude Include="include\threading\transports\transports.hpp">
       <Filter>include\threading\transports</Filter>
     </ClInclude>
+    <ClInclude Include="include\memory\allocation_context.hpp">
+      <Filter>include\memory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main\ManifoldEngine.cpp">
@@ -499,6 +502,9 @@
     </ClCompile>
     <ClCompile Include="src\host\host.cpp">
       <Filter>src\host</Filter>
+    </ClCompile>
+    <ClCompile Include="src\memory\allocation_context.cpp">
+      <Filter>src\memory</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

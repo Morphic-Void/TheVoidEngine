@@ -47,6 +47,7 @@
 #include <new>          //  std::align_val_t, std::nothrow, aligned operator new[]/delete[]
 #include <type_traits>  //  std::is_same_v
 
+#include "allocation_context.hpp"
 #include "bit_utils/bit_ops.hpp"
 #include "debug/debug.hpp"
 
@@ -186,13 +187,6 @@ constexpr std::align_val_t alignment_policy(const std::size_t align) noexcept
 //  - allocation disabling affects allocation only; deallocation remains enabled
 //  - allocation enable/disable is intended primarily for test/debug control
 //==============================================================================
-
-class IAllocator
-{
-public:
-    virtual void* byte_allocate(const std::size_t bytes, const std::size_t align) noexcept = 0;
-    virtual void byte_deallocate(void* const ptr, const std::size_t align) noexcept = 0;
-};
 
 //  Installs the active allocator.
 //  Returns false if allocator replacement is currently disallowed.
