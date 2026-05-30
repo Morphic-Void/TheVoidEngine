@@ -53,7 +53,7 @@ public:
     CThread(CThread&&) = delete;
     CThread& operator=(CThread&&) = delete;
 
-    //  Constructor and destructor
+    //  Lifetime
     CThread() noexcept;
     ~CThread() noexcept;
 
@@ -62,10 +62,10 @@ public:
 
     //  Thread startup
     //
-    //  entry and user_data must both be non-null.
+    //  entry_point and user_data must both be non-null.
     //  stack_size_bytes == 0u selects the platform default.
     bool create(
-        FThreadEntry const entry, void* const user_data,
+        FThreadEntry const entry_point, void* const user_data,
         const std::uint32_t stack_size_bytes = 0u) noexcept;
 
     //  Thread shutdown
@@ -73,9 +73,9 @@ public:
     void close_handle() noexcept;
 
 private:
-    friend struct ThreadEntryAccess;
+    friend struct PlatformShimAccess;
 
-    std::uint32_t run_entry() noexcept;
+    std::uint32_t entry_point_shim() noexcept;
 
     bool create_native_thread(const std::uint32_t stack_size_bytes) noexcept;
 
@@ -83,7 +83,7 @@ private:
 
     std::uint64_t m_native_token = 0u;
 
-    FThreadEntry m_entry = nullptr;
+    FThreadEntry m_entry_point = nullptr;
     void* m_user_data = nullptr;
 
     //  Windows thread id returned by _beginthreadex.

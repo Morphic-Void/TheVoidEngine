@@ -58,31 +58,31 @@ static T unpack_native_token(const std::uint64_t packed) noexcept
 }
 
 //==============================================================================
-//  Native entry shims
+//  Platform entry point shims
 //==============================================================================
 
-struct ThreadEntryAccess
+struct PlatformShimAccess
 {
 #if MV_PLATFORM_WINDOWS
 
-    static unsigned __stdcall thread_entry_shim(void* const arg) noexcept
+    static unsigned __stdcall platform_entry_point_shim(void* const arg) noexcept
     {
         CThread* const thread = static_cast<CThread*>(arg);
         if (MV_FAIL_SAFE_ASSERT(thread != nullptr))
         {
-            return static_cast<unsigned>(thread->run_entry());
+            return static_cast<unsigned>(thread->entry_point_shim());
         }
         return 0u;
     }
 
 #elif MV_PLATFORM_HAS_PTHREADS
 
-    static void* thread_entry_shim(void* const arg) noexcept
+    static void* platform_entry_point_shim(void* const arg) noexcept
     {
         CThread* const thread = static_cast<CThread*>(arg);
         if (MV_FAIL_SAFE_ASSERT(thread != nullptr))
         {
-            const std::uint32_t result = thread->run_entry();
+            const std::uint32_t result = thread->entry_point_shim();
             return reinterpret_cast<void*>(static_cast<std::uintptr_t>(result));
         }
         return nullptr;
@@ -119,15 +119,15 @@ bool CThread::is_valid() const noexcept
 //==============================================================================
 
 bool CThread::create(
-    FThreadEntry const entry, void* const user_data,
+    FThreadEntry const entry_point, void* const user_data,
     const std::uint32_t stack_size_bytes) noexcept
 {
     if (MV_FAIL_SAFE_ASSERT(!is_valid()))
     {
-        if (MV_FAIL_SAFE_ASSERT((entry != nullptr) && (user_data != nullptr)))
+        if (MV_FAIL_SAFE_ASSERT((entry_point != nullptr) && (user_data != nullptr)))
         {
             clear();
-            m_entry = entry;
+            m_entry_point = entry_point;
             m_user_data = user_data;
             const bool created = create_native_thread(stack_size_bytes);
             if (created)
@@ -192,11 +192,11 @@ void CThread::close_handle() noexcept
 //  Entry
 //==============================================================================
 
-std::uint32_t CThread::run_entry() noexcept
+std::uint32_t CThread::entry_point_shim() noexcept
 {
-    if (MV_FAIL_SAFE_ASSERT((m_entry != nullptr) && (m_user_data != nullptr)))
+    if (MV_FAIL_SAFE_ASSERT((m_entry_point != nullptr) && (m_user_data != nullptr)))
     {
-        return m_entry(m_user_data);
+        return m_entry_point(m_user_data);
     }
     return 0u;
 }
@@ -215,7 +215,7 @@ bool CThread::create_native_thread(const std::uint32_t stack_size_bytes) noexcep
 
     const std::uintptr_t raw_handle = ::_beginthreadex(
         nullptr, static_cast<unsigned int>(stack_size_bytes),
-        &ThreadEntryAccess::thread_entry_shim, this, 0u, &windows_thread_id);
+        &PlatformShimAccess::platform_entry_point_shim, this, 0u, &windows_thread_id);
 
     if (raw_handle != 0u)
     {
@@ -257,7 +257,7 @@ bool CThread::create_native_thread(const std::uint32_t stack_size_bytes) noexcep
     pthread_t native_thread;
 
     const int create_result = ::pthread_create(
-        &native_thread, attr_ptr, &ThreadEntryAccess::thread_entry_shim, this);
+        &native_thread, attr_ptr, &PlatformShimAccess::platform_entry_point_shim, this);
 
     if (attr_ptr != nullptr)
     {
@@ -288,7 +288,7 @@ bool CThread::create_native_thread(const std::uint32_t stack_size_bytes) noexcep
 void CThread::clear() noexcept
 {
     m_native_token = 0u;
-    m_entry = nullptr;
+    m_entry_point = nullptr;
     m_user_data = nullptr;
     m_windows_thread_id = 0u;
     m_valid = false;
