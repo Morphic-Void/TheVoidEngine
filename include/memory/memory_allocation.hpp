@@ -42,7 +42,7 @@
 
 #include <algorithm>    //  std::min, std::max
 #include <cstddef>      //  std::size_t
-#include <cstdint>      //  std::uint32_t
+#include <cstdint>      //  std::uint32_t, std::uint64_t
 #include <limits>       //  std::numeric_limits
 #include <new>          //  std::align_val_t, std::nothrow, aligned operator new[]/delete[]
 #include <type_traits>  //  std::is_same_v
@@ -71,7 +71,12 @@ constexpr std::size_t k_max_elements = 0x80000000u;
     return std::min((std::numeric_limits<std::size_t>::max() / std::max(element_size, std::size_t{ 1 })), k_max_elements);
 }
 
-[[nodiscard]] constexpr bool in_non_empty_range(const std::size_t x, const std::size_t max) noexcept
+[[nodiscard]] constexpr bool in_non_empty_range(const std::uint32_t x, const std::uint32_t max) noexcept
+{
+    return (x - 1u) < max;
+}
+
+[[nodiscard]] constexpr bool in_non_empty_range(const std::uint64_t x, const std::uint64_t max) noexcept
 {
     return (x - 1u) < max;
 }
