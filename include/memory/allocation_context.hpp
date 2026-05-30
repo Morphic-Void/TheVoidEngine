@@ -83,7 +83,7 @@ namespace context
 bool install(CAllocationContext& context) noexcept;
 bool uninstall(const CAllocationContext& context) noexcept;
 void* byte_allocate(const std::size_t bytes, const std::size_t align) noexcept;
-void byte_deallocate(void* const ptr, const std::size_t align) noexcept;
+bool byte_deallocate(void* const ptr, const std::size_t align) noexcept;
 
 }   //  namespace context
 
@@ -96,7 +96,7 @@ class IAllocator
 {
 public:
     virtual void* byte_allocate(const std::size_t bytes, const std::size_t align) noexcept = 0;
-    virtual void byte_deallocate(void* const ptr, const std::size_t align) noexcept = 0;
+    virtual bool byte_deallocate(void* const ptr, const std::size_t align) noexcept = 0;
 };
 
 //==============================================================================
@@ -128,7 +128,7 @@ public:
 
     //  Allocation and deallocation
     void* byte_allocate(const std::size_t bytes, const std::size_t align) noexcept;
-    void  byte_deallocate(void* const ptr, const std::size_t align) noexcept;
+    bool  byte_deallocate(void* const ptr, const std::size_t align) noexcept;
 
     //  Statistics queries
     std::uint32_t get_live_allocation_count() const noexcept;
@@ -203,19 +203,20 @@ inline void* CAllocationContext::byte_allocate(const std::size_t bytes, const st
     return nullptr;
 }
 
-inline void CAllocationContext::byte_deallocate(void* const ptr, const std::size_t align) noexcept
+inline bool CAllocationContext::byte_deallocate(void* const ptr, const std::size_t align) noexcept
 {
     if (m_allocator != nullptr)
     {
-        if (ptr != nullptr)
+        if ((ptr != nullptr) && (m_live_allocation_count != 0u))
         {   //  note: the ptr null check is not strictly required
-            if (m_live_allocation_count != 0u)
+            if (m_allocator->byte_deallocate(ptr, align))
             {
-                m_allocator->byte_deallocate(ptr, align);
                 m_live_allocation_count -= 1u;
+                return true;
             }
         }
     }
+    return false;
 }
 
 inline std::uint32_t CAllocationContext::get_live_allocation_count() const noexcept

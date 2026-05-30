@@ -63,13 +63,14 @@ void* byte_allocate(const std::size_t bytes, const std::size_t align) noexcept
     return nullptr;
 }
 
-void byte_deallocate(void* const ptr, const std::size_t align) noexcept
+bool byte_deallocate(void* const ptr, const std::size_t align) noexcept
 {
     if (g_allocator_context != nullptr)
     {   //  note: the ptr null check is not strictly required
         CAllocationContext& context = *g_allocator_context;
-        context.byte_deallocate(ptr, align);
+        return context.byte_deallocate(ptr, align);
     }
+    return false;
 }
 
 }   //  namespace memory::context
