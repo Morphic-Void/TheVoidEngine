@@ -20,10 +20,10 @@
 #define THREADING_HPP_INCLUDED
 
 #include "CParkingGate.hpp"
-#include "CPodThreadMsg.hpp"
 #include "CThreadControlState.hpp"
 #include "CWaitPredicate.hpp"
 #include "CCountingSemaphore.hpp"
+#include "messages/messages.hpp"
 #include "transports/transports.hpp"
 #include "transports/bundles/transport_bundles.hpp"
 #include "transports/endpoints/transport_endpoints.hpp"
