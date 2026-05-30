@@ -154,6 +154,9 @@
     <Filter Include="include\threading\transports\interfaces">
       <UniqueIdentifier>{ab93cf3c-e250-41f3-bfcf-2831f264b58a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\threading\messages">
+      <UniqueIdentifier>{39411ac7-e9db-440a-8bd4-1b6de24569b7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\containers\ByteBuffers.hpp">
@@ -288,9 +291,6 @@
     <ClInclude Include="include\platform\threading\thread_lifetime.hpp">
       <Filter>include\platform\threading</Filter>
     </ClInclude>
-    <ClInclude Include="include\memory\host_allocator.hpp">
-      <Filter>include\memory</Filter>
-    </ClInclude>
     <ClInclude Include="include\system\TStaticLookup.hpp">
       <Filter>include\system</Filter>
     </ClInclude>
@@ -329,9 +329,6 @@
     </ClInclude>
     <ClInclude Include="include\types\typeless_traits.hpp">
       <Filter>include\types</Filter>
-    </ClInclude>
-    <ClInclude Include="include\threading\CPodThreadMsg.hpp">
-      <Filter>include\threading</Filter>
     </ClInclude>
     <ClInclude Include="include\containers\containers.hpp">
       <Filter>include\containers</Filter>
@@ -405,6 +402,18 @@
     <ClInclude Include="include\memory\allocation_context.hpp">
       <Filter>include\memory</Filter>
     </ClInclude>
+    <ClInclude Include="include\threading\messages\CPodThreadMsg.hpp">
+      <Filter>include\threading\messages</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\messages\byte_view_payloads.hpp">
+      <Filter>include\threading\messages</Filter>
+    </ClInclude>
+    <ClInclude Include="include\threading\messages\messages.hpp">
+      <Filter>include\threading\messages</Filter>
+    </ClInclude>
+    <ClInclude Include="include\host\host_allocator.hpp">
+      <Filter>include\host</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main\ManifoldEngine.cpp">
@@ -476,9 +485,6 @@
     <ClCompile Include="src\platform\threading\thread_lifetime.cpp">
       <Filter>src\platform\threading</Filter>
     </ClCompile>
-    <ClCompile Include="src\memory\host_allocator.cpp">
-      <Filter>src\memory</Filter>
-    </ClCompile>
     <ClCompile Include="src\platform\threading\thread_priority.cpp">
       <Filter>src\platform\threading</Filter>
     </ClCompile>
@@ -505,6 +511,9 @@
     </ClCompile>
     <ClCompile Include="src\memory\allocation_context.cpp">
       <Filter>src\memory</Filter>
+    </ClCompile>
+    <ClCompile Include="src\host\host_allocator.cpp">
+      <Filter>src\host</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

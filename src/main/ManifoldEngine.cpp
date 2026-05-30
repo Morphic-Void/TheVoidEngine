@@ -31,8 +31,8 @@
 #include "containers/TUnorderedCollection.hpp"
 #include "debug/debug.hpp"
 #include "host/host.hpp"
+#include "host/host_allocator.hpp"
 #include "image/codec/tga.hpp"
-#include "memory/host_allocator.hpp"
 #include "memory/memory_allocation.hpp"
 #include "memory/memory_primitives.hpp"
 #include "memory/memory_typeless.hpp"
@@ -78,12 +78,12 @@ bool test_tga()
 int main()
 {
     int ret = 0;
-    memory::IAllocator* host_allocator = memory::get_the_host_allocator(system_ids::host);
+    memory::IAllocator* host_allocator = host::get_the_host_allocator(system_ids::host);
     if (MV_FAIL_SAFE_ASSERT(host_allocator != nullptr))
     {
         if (MV_FAIL_SAFE_ASSERT(memory::set_allocator(host_allocator)))
         {
-            host();
+            host::host();
             platform::system::set_current_process_priority(platform::system::EProcessPriority::AboveNormal);
             const std::uint32_t hw_threads_supported = platform::threading::query_hardware_thread_count();
             ret = run_tests();

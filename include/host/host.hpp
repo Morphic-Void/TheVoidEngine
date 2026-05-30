@@ -17,6 +17,11 @@
 #ifndef HOST_HPP_INCLUDED
 #define HOST_HPP_INCLUDED
 
+namespace host
+{
+
 int host();
+
+}   //  namespace host
 
 #endif  //  HOST_HPP_INCLUDED
